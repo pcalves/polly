@@ -15,6 +15,10 @@ export default defineSchema({
     isAnonymous: v.optional(v.boolean()),
     messagesSent: v.optional(v.number()), // Total messages sent (for anonymous user limits)
     createdAt: v.optional(v.number()),
+    // Monthly message limit tracking for signed-in users
+    monthlyMessagesSent: v.optional(v.number()), // Messages sent in current month
+    monthlyLimit: v.optional(v.number()), // Monthly limit (default 500)
+    lastMonthlyReset: v.optional(v.number()), // Last reset timestamp
   }).index("email", ["email"]),
 
   accounts: defineTable({

@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useDebounce } from "@/hooks/use-debounce";
 import dynamic from "next/dynamic";
+import { SettingsHeader } from "./settings-header";
 
 // Dynamically import heavy components
 const VirtualizedModelList = dynamic(
@@ -554,13 +555,10 @@ export function ModelsTab() {
   if (availableProviders.length === 0) {
     return (
       <div className="space-y-6">
-        <div>
-          <h2 className="text-lg font-semibold mb-2">Models</h2>
-          <p className="text-sm text-muted-foreground">
-            Configure your API keys to use different AI providers. Once you add
-            API keys, models will be automatically fetched and displayed here.
-          </p>
-        </div>
+        <SettingsHeader
+          title="Models"
+          description="Configure your API keys to use different AI providers. Once you add API keys, models will be automatically fetched and displayed here."
+        />
 
         <div className="flex items-center justify-center h-64 border border-dashed border-muted rounded-lg">
           <div className="text-center space-y-3">
@@ -576,20 +574,17 @@ export function ModelsTab() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-lg font-semibold mb-2">Models</h2>
-          <p className="text-sm text-muted-foreground">
-            Browse and explore AI models from your configured providers. Enable
-            models to use them in conversations.
-          </p>
-        </div>
+      <div className="flex items-start justify-between">
+        <SettingsHeader
+          title="Models"
+          description="Browse and explore AI models from your configured providers. Enable models to use them in conversations."
+        />
         <Button
           onClick={handleRefresh}
           disabled={modelsLoading}
           size="sm"
           variant="outline"
-          className="gap-2"
+          className="gap-2 shrink-0"
         >
           <RefreshCw
             className={`h-4 w-4 ${modelsLoading ? "animate-spin" : ""}`}

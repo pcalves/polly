@@ -21,7 +21,7 @@ export default function NotFound() {
         </div>
 
         <div className="space-y-3">
-          <Button asChild className="w-full">
+          <Button asChild size="full">
             <Link href="/">
               <Home className="mr-2 h-4 w-4" />
               Go to Polly AI

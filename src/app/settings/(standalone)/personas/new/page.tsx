@@ -18,6 +18,7 @@ import { countTokens } from "@/lib/utils";
 import { useWordBasedUndo } from "@/hooks/use-word-based-undo";
 import { SkeletonText } from "@/components/ui/skeleton-text";
 import EmojiPicker, { EmojiClickData } from "emoji-picker-react";
+import { SettingsHeader } from "@/components/settings/settings-header";
 
 interface PersonaFormData {
   name: string;
@@ -349,13 +350,10 @@ export default function NewPersonaPage() {
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold">Create New Persona</h1>
-        <p className="text-muted-foreground mt-2">
-          Give your AI assistant a unique personality and style for different
-          types of conversations
-        </p>
-      </div>
+      <SettingsHeader
+        title="Create New Persona"
+        description="Give your AI assistant a unique personality and style for different types of conversations"
+      />
 
       {/* Form */}
       <PersonaForm

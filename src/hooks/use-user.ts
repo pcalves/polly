@@ -11,8 +11,8 @@ import {
 import { usePreloadedQuery, Preloaded } from "convex/react";
 
 const ANONYMOUS_USER_ID_KEY = "anonymous-user-id";
-// Keep in sync with server-side MESSAGE_LIMIT in convex/users.ts
-const MESSAGE_LIMIT = 10;
+// Keep in sync with server-side ANONYMOUS_MESSAGE_LIMIT in convex/users.ts
+const ANONYMOUS_MESSAGE_LIMIT = 10;
 
 interface UseUserReturn {
   user: User | null;
@@ -22,28 +22,74 @@ interface UseUserReturn {
   hasMessageLimit: boolean;
   canSendMessage: boolean;
   isLoading: boolean;
+  // New fields for authenticated users
+  monthlyUsage?: {
+    monthlyMessagesSent: number;
+    monthlyLimit: number;
+    remainingMessages: number;
+    resetDate: number;
+    needsReset: boolean;
+  };
+  hasUserApiKeys?: boolean;
 }
 
 // Helper function to compute user properties consistently
 function computeUserProperties(
   user: User | null,
   messageCount: number | undefined,
+  monthlyUsage:
+    | {
+        monthlyMessagesSent: number;
+        monthlyLimit: number;
+        remainingMessages: number;
+        resetDate: number;
+        needsReset: boolean;
+      }
+    | null
+    | undefined,
+  hasUserApiKeys: boolean | undefined,
   isLoading: boolean
 ): Omit<UseUserReturn, "user"> {
   const isAnonymous = user?.isAnonymous ?? true;
-  const actualMessageCount = messageCount ?? 0;
-  const remainingMessages = Math.max(0, MESSAGE_LIMIT - actualMessageCount);
-  const hasMessageLimit = isAnonymous;
-  const canSendMessage = !isAnonymous || actualMessageCount < MESSAGE_LIMIT;
 
-  return {
-    messageCount: actualMessageCount,
-    remainingMessages,
-    isAnonymous,
-    hasMessageLimit,
-    canSendMessage,
-    isLoading,
-  };
+  if (isAnonymous) {
+    // Anonymous users: use existing logic
+    const actualMessageCount = messageCount ?? 0;
+    const remainingMessages = Math.max(
+      0,
+      ANONYMOUS_MESSAGE_LIMIT - actualMessageCount
+    );
+    const hasMessageLimit = true;
+    const canSendMessage = actualMessageCount < ANONYMOUS_MESSAGE_LIMIT;
+
+    return {
+      messageCount: actualMessageCount,
+      remainingMessages,
+      isAnonymous,
+      hasMessageLimit,
+      canSendMessage,
+      isLoading,
+    };
+  } else {
+    // Authenticated users: use monthly limits
+    const monthlyMessagesSent = monthlyUsage?.monthlyMessagesSent ?? 0;
+    const monthlyLimit = monthlyUsage?.monthlyLimit ?? 100;
+    const monthlyRemaining = Math.max(0, monthlyLimit - monthlyMessagesSent);
+
+    // Can send message if under monthly limit OR has BYOK models available
+    const canSendMessage = monthlyRemaining > 0 || (hasUserApiKeys ?? false);
+
+    return {
+      messageCount: 0, // Not relevant for authenticated users
+      remainingMessages: monthlyRemaining,
+      isAnonymous,
+      hasMessageLimit: true, // Authenticated users have monthly limits
+      canSendMessage,
+      isLoading,
+      monthlyUsage: monthlyUsage || undefined,
+      hasUserApiKeys,
+    };
+  }
 }
 
 // Get stored anonymous user ID from cookies first, then migrate from localStorage
@@ -110,8 +156,25 @@ export function useUser(): UseUserReturn {
     currentUserId ? { userId: currentUserId } : "skip"
   );
 
-  // Migration helper for existing users
+  // Get monthly usage for authenticated users
+  const monthlyUsage = useQuery(
+    api.users.getMonthlyUsage,
+    authenticatedUser && !authenticatedUser.isAnonymous
+      ? { userId: authenticatedUser._id }
+      : "skip"
+  );
+
+  // Check if user has API keys for BYOK models
+  const hasUserApiKeys = useQuery(
+    api.users.hasUserApiKeys,
+    authenticatedUser && !authenticatedUser.isAnonymous ? {} : "skip"
+  );
+
+  // Migration helpers
   const initializeMessagesSent = useMutation(api.users.initializeMessagesSent);
+  const initializeMonthlyLimits = useMutation(
+    api.users.initializeMonthlyLimits
+  );
 
   // Determine which user to use (authenticated takes priority)
   const currentUser: User | null = useMemo(() => {
@@ -130,6 +193,13 @@ export function useUser(): UseUserReturn {
       initializeMessagesSent({ userId: currentUser._id });
     }
   }, [currentUser, initializeMessagesSent]);
+
+  // Initialize monthly limits for existing authenticated users
+  useEffect(() => {
+    if (currentUser && !currentUser.isAnonymous) {
+      initializeMonthlyLimits({ userId: currentUser._id });
+    }
+  }, [currentUser, initializeMonthlyLimits]);
 
   // Determine loading state - we're loading if:
   // 1. We have no authenticated user yet and the query is still pending (undefined)
@@ -155,6 +225,8 @@ export function useUser(): UseUserReturn {
   const userProperties = computeUserProperties(
     currentUser,
     messageCount,
+    monthlyUsage,
+    hasUserApiKeys,
     isLoading
   );
 
@@ -164,13 +236,16 @@ export function useUser(): UseUserReturn {
   };
 }
 
-// Hook for preloaded user data - use this when you have preloaded data
 export function usePreloadedUser(
   preloadedUser: Preloaded<typeof api.users.getById>,
-  preloadedMessageCount: Preloaded<typeof api.users.getMessageCount>
+  preloadedMessageCount: Preloaded<typeof api.users.getMessageCount>,
+  preloadedMonthlyUsage: Preloaded<typeof api.users.getMonthlyUsage>,
+  preloadedHasUserApiKeys: Preloaded<typeof api.users.hasUserApiKeys>
 ): UseUserReturn {
   const user = usePreloadedQuery(preloadedUser);
   const messageCount = usePreloadedQuery(preloadedMessageCount);
+  const monthlyUsage = usePreloadedQuery(preloadedMonthlyUsage);
+  const hasUserApiKeys = usePreloadedQuery(preloadedHasUserApiKeys);
 
   // Migration helper for existing users
   const initializeMessagesSent = useMutation(api.users.initializeMessagesSent);
@@ -182,7 +257,13 @@ export function usePreloadedUser(
     }
   }, [user, initializeMessagesSent]);
 
-  const userProperties = computeUserProperties(user, messageCount, false);
+  const userProperties = computeUserProperties(
+    user,
+    messageCount,
+    monthlyUsage,
+    hasUserApiKeys,
+    false
+  );
 
   return {
     user,

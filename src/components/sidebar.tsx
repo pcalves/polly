@@ -5,17 +5,17 @@ import { SidebarSearch } from "@/components/sidebar/search";
 import { ConversationListClient } from "@/components/sidebar/conversation-list-client";
 import { UserSection } from "@/components/sidebar/user-section";
 import { ConversationId } from "@/types";
-import { Settings, Moon, Sun, PanelLeft } from "lucide-react";
+import { Settings, PanelLeft } from "lucide-react";
 import { ParrotLogo } from "@/components/parrot-logo";
 import { cn } from "@/lib/utils";
 import { useState, useEffect, useCallback } from "react";
-import { useTheme } from "next-themes";
 import { useThinking } from "@/providers/thinking-provider";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useUser } from "@/hooks/use-user";
@@ -53,18 +53,12 @@ interface SidebarProps {
 export function Sidebar({ children }: SidebarProps) {
   const { isThinking } = useThinking();
   const [searchQuery, setSearchQuery] = useState("");
-  const { theme, setTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [lastDesktopSidebarState, setLastDesktopSidebarState] = useState(true);
   const [isSidebarVisible, setIsSidebarVisible] = useState(true);
   const params = useParams();
   const currentConversationId = params.conversationId as ConversationId;
   const { user } = useUser();
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   useEffect(() => {
     setIsSidebarVisible(loadSidebarVisibility());
@@ -138,10 +132,6 @@ export function Sidebar({ children }: SidebarProps) {
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [handleToggleSidebar]);
 
-  const toggleTheme = useCallback(() => {
-    setTheme(theme === "dark" ? "light" : "dark");
-  }, [theme, setTheme]);
-
   const handleBackdropClick = useCallback(() => {
     if (isMobile && isSidebarVisible) {
       setIsSidebarVisible(false);
@@ -151,7 +141,6 @@ export function Sidebar({ children }: SidebarProps) {
 
   return (
     <div className="h-screen flex relative">
-      {/* Mobile backdrop overlay */}
       {isMobile && isSidebarVisible && (
         <div
           className="fixed inset-0 bg-black/50 backdrop-blur-sm z-30 lg:hidden"
@@ -189,16 +178,10 @@ export function Sidebar({ children }: SidebarProps) {
         }}
       >
         <div className="flex flex-col h-full w-80">
-          {/* Header with logo and controls */}
           <div className="flex-shrink-0 sidebar-header-gradient">
-            {/* Top spacing to align with header - matching the 64px header height and centering */}
             <div className="h-16 flex items-center px-6">
-              {/* Left: Spacer for toggle button */}
-              <div className="flex-shrink-0 w-8">
-                {/* Empty space where toggle button would be */}
-              </div>
+              <div className="flex-shrink-0 w-8"></div>
 
-              {/* Center: Logo */}
               <div className="flex-1 flex justify-center">
                 <div className="polly-container flex items-center gap-2 group cursor-pointer">
                   <ParrotLogo size="md" isThinking={isThinking} />
@@ -206,9 +189,7 @@ export function Sidebar({ children }: SidebarProps) {
                 </div>
               </div>
 
-              {/* Right: Settings and theme toggle */}
               <div className="flex-shrink-0 flex items-center gap-0.5">
-                {/* Settings button - only show for authenticated users */}
                 {user && !user.isAnonymous && (
                   <Tooltip>
                     <TooltipTrigger asChild>
@@ -228,40 +209,7 @@ export function Sidebar({ children }: SidebarProps) {
                   </Tooltip>
                 )}
 
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={toggleTheme}
-                      className="h-8 w-8 p-0 transition-colors duration-150"
-                      title={
-                        mounted
-                          ? theme === "dark"
-                            ? "Switch to light mode"
-                            : "Switch to dark mode"
-                          : undefined
-                      }
-                    >
-                      {!mounted ? (
-                        <Moon className="h-4 w-4" />
-                      ) : theme === "dark" ? (
-                        <Sun className="h-4 w-4" />
-                      ) : (
-                        <Moon className="h-4 w-4" />
-                      )}
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>
-                      {mounted
-                        ? theme === "dark"
-                          ? "Switch to light mode"
-                          : "Switch to dark mode"
-                        : "Toggle theme"}
-                    </p>
-                  </TooltipContent>
-                </Tooltip>
+                <ThemeToggle />
               </div>
             </div>
 
@@ -279,7 +227,6 @@ export function Sidebar({ children }: SidebarProps) {
                 </div>
               </div>
 
-              {/* Search */}
               <SidebarSearch
                 searchQuery={searchQuery}
                 onSearchChange={setSearchQuery}
@@ -301,13 +248,7 @@ export function Sidebar({ children }: SidebarProps) {
       <div
         className={`
           flex-1 h-screen flex flex-col transition-all duration-300 ease-out
-          ${
-            isMobile
-              ? "ml-0" // No margin on mobile (overlay)
-              : isSidebarVisible
-                ? "ml-80" // 320px sidebar width on desktop
-                : "ml-0"
-          }
+          ${isMobile || !isSidebarVisible ? "ml-0" : "ml-80"}
         `}
       >
         {children}

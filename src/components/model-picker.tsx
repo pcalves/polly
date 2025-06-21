@@ -316,8 +316,9 @@ function ModelPickerComponent({ className }: ModelPickerProps) {
 
             {/* CTA button with consistent accent color */}
             <Button
-              size="lg"
-              className="w-full bg-accent-emerald hover:bg-accent-emerald/90 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-200 text-base font-semibold py-4"
+              size="full-lg"
+              variant="emerald"
+              className="text-base font-semibold py-4"
               onClick={() => router.push("/auth")}
             >
               Sign In

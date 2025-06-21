@@ -124,6 +124,7 @@ export const { auth, signIn, signOut, store } = convexAuth({
 
       // No existing user found, create new authenticated user
       console.log(`[Auth] Creating new authenticated user`);
+      const now = Date.now();
       return ctx.db.insert("users", {
         name:
           typeof args.profile.name === "string" ? args.profile.name : undefined,
@@ -141,8 +142,12 @@ export const { auth, signIn, signOut, store } = convexAuth({
             ? args.profile.image
             : undefined,
         isAnonymous: false,
-        createdAt: Date.now(),
+        createdAt: now,
         messagesSent: 0,
+        // Initialize monthly limits for new authenticated users
+        monthlyMessagesSent: 0,
+        monthlyLimit: 500,
+        lastMonthlyReset: now,
       });
     },
   },

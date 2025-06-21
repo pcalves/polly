@@ -10,7 +10,7 @@
     --card-foreground: 0 0% 3.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 0 0% 3.9%;
-    --primary: 158 65% 40%;
+    --primary: 158 75% 35%;
     --primary-foreground: 0 0% 98%;
     --secondary: 158 20% 96%;
     --secondary-foreground: 158 65% 40%;
@@ -31,11 +31,18 @@
     --accent-emerald: 158 65% 40%;
     --accent-orange: 35 90% 55%;
     --accent-coral: 10 75% 60%;
-    --accent-yellow: 55 85% 60%;
+    --accent-yellow: 45 85% 35%;
 
     /* Light mode glass effects */
     --glass-bg: 255 255 255 / 0.8;
     --glass-border: 158 20% 90% / 0.5;
+
+    /* Light mode surface colors */
+    --surface-primary: 158 20% 98%;
+    --surface-secondary: 158 15% 99%;
+    --surface-elevated: 0 0% 100%;
+    --surface-hover: 158 15% 97%;
+    --surface-active: 158 25% 95%;
 
     /* Subtle brand color bleeding */
     --sidebar-tinted: 158 12% 97.5%;
@@ -1273,4 +1280,24 @@
 .katex-container .katex-display {
   will-change: auto;
   transform: translateZ(0);
+}
+
+/* Enhanced progress bar styling for better visibility */
+.progress-enhanced {
+  background: linear-gradient(
+    to right,
+    hsl(var(--primary)),
+    hsl(var(--accent-emerald))
+  );
+  box-shadow: 0 2px 4px -1px rgb(0 0 0 / 0.1);
+  border-radius: inherit;
+}
+
+.dark .progress-enhanced {
+  background: linear-gradient(
+    to right,
+    hsl(var(--primary)),
+    hsl(var(--accent-blue))
+  );
+  box-shadow: 0 2px 4px -1px rgb(0 0 0 / 0.2);
 }

@@ -4,6 +4,5 @@ import { redirect } from "next/navigation";
 export const dynamic = "force-dynamic";
 
 export default function SettingsPage() {
-  // Redirect server-side for better performance
   redirect("/settings/api-keys");
 }

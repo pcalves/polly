@@ -303,7 +303,7 @@ export const createNewConversation = action({
       actualUserId = args.userId;
     }
 
-    // Enforce message limit for anonymous users
+    // Enforce message limit for users
     await ctx.runMutation(api.users.enforceMessageLimit, {
       userId: actualUserId,
     });
@@ -512,9 +512,10 @@ export const sendFollowUpMessage = action({
       throw new Error("Conversation not found");
     }
 
-    // Enforce message limit for anonymous users
+    // Enforce message limit for users
     await ctx.runMutation(api.users.enforceMessageLimit, {
       userId: conversation.userId,
+      modelProvider: args.provider,
     });
 
     // Get API key for the provider
@@ -552,6 +553,7 @@ export const sendFollowUpMessage = action({
       // Increment user's message count for limit tracking
       await ctx.runMutation(api.users.incrementMessageCount, {
         userId: conversation.userId,
+        modelProvider: args.provider,
       });
 
       // Get all messages for context
@@ -723,9 +725,10 @@ export const retryFromMessage = action({
       throw new Error("Conversation not found");
     }
 
-    // Enforce message limit for anonymous users (retrying counts as sending a new message)
+    // Enforce message limit for users (retrying counts as sending a new message)
     await ctx.runMutation(api.users.enforceMessageLimit, {
       userId: conversation.userId,
+      modelProvider: args.provider,
     });
 
     // Get API key for the provider
@@ -950,9 +953,10 @@ export const editMessage = action({
       throw new Error("Conversation not found");
     }
 
-    // Enforce message limit for anonymous users (editing counts as sending a new message)
+    // Enforce message limit for users (editing counts as sending a new message)
     await ctx.runMutation(api.users.enforceMessageLimit, {
       userId: conversation.userId,
+      modelProvider: args.provider,
     });
 
     // Get API key for the provider
@@ -1004,6 +1008,7 @@ export const editMessage = action({
       // Increment user's message count for limit tracking (editing counts as sending)
       await ctx.runMutation(api.users.incrementMessageCount, {
         userId: conversation.userId,
+        modelProvider: args.provider,
       });
 
       // Delete all messages after the edited message

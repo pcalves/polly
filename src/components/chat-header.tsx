@@ -101,7 +101,7 @@ export function ChatHeader({ conversationId }: ChatHeaderProps) {
         <div className="flex items-center gap-2">
           {/* Share button */}
           <ShareConversationDialog conversationId={conversationId}>
-            <Button variant="ghost" size="sm" className="h-8 gap-2">
+            <Button variant="ghost" size="sm" className="gap-2">
               <Share2 className="h-4 w-4" />
               <span className="hidden sm:inline">Share</span>
               <span className="sr-only">Share conversation</span>
@@ -112,7 +112,7 @@ export function ChatHeader({ conversationId }: ChatHeaderProps) {
           {exportData && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                <Button variant="ghost" size="icon-sm">
                   <MoreHorizontal className="h-4 w-4" />
                   <span className="sr-only">More options</span>
                 </Button>

@@ -21,6 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { SettingsHeader } from "./settings-header";
 
 type ApiProvider = "openai" | "anthropic" | "google" | "openrouter";
 
@@ -147,13 +148,10 @@ export function ApiKeysTab() {
   if (apiKeys === undefined) {
     return (
       <div className="space-y-6">
-        <div>
-          <h2 className="text-lg font-semibold mb-2">API Keys</h2>
-          <p className="text-sm text-muted-foreground">
-            Configure your API keys to use different AI providers. Keys are
-            securely encrypted and stored.
-          </p>
-        </div>
+        <SettingsHeader
+          title="API Keys"
+          description="Configure your API keys to use different AI providers. Keys are securely encrypted and stored."
+        />
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {(
@@ -176,13 +174,10 @@ export function ApiKeysTab() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-lg font-semibold mb-2">API Keys</h2>
-        <p className="text-sm text-muted-foreground">
-          Configure your API keys to use different AI providers. Keys are
-          securely encrypted and stored across all your devices.
-        </p>
-      </div>
+      <SettingsHeader
+        title="API Keys"
+        description="Configure your API keys to use different AI providers. Keys are securely encrypted and stored across all your devices."
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {(
@@ -282,11 +277,7 @@ export function ApiKeysTab() {
                         required
                       />
                     </div>
-                    <Button
-                      type="submit"
-                      size="sm"
-                      className="px-4 bg-gradient-to-br from-accent-emerald to-accent-emerald/90 hover:from-accent-emerald/90 hover:to-accent-emerald text-white"
-                    >
+                    <Button type="submit" size="sm" variant="emerald">
                       Save
                     </Button>
                   </form>

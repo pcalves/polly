@@ -324,14 +324,15 @@ function ChatMessageComponent({
                       variant="outline"
                       size="sm"
                       onClick={handleEditCancel}
-                      className="px-5 py-2 text-sm bg-background border-border/60 transition-all duration-200 hover:scale-105"
+                      className="px-5 py-2 hover:scale-105"
                     >
                       Cancel
                     </Button>
                     <Button
                       size="sm"
+                      variant="emerald"
                       onClick={handleEditSave}
-                      className="px-5 py-2 text-sm bg-accent-emerald text-white shadow-md hover:shadow-lg transition-all duration-200 hover:scale-105"
+                      className="px-5 py-2 hover:scale-105"
                     >
                       Save
                     </Button>

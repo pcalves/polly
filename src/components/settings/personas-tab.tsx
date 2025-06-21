@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useCallback, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import { Plus, Trash2, User } from "lucide-react";
@@ -15,6 +15,7 @@ import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 import { Id } from "../../../convex/_generated/dataModel";
 import { useRouter } from "next/navigation";
+import { SettingsHeader } from "./settings-header";
 
 export function PersonasTab() {
   const userInfo = useUser();
@@ -33,7 +34,7 @@ export function PersonasTab() {
     null
   );
 
-  const handleDeletePersona = async () => {
+  const handleDeletePersona = useCallback(async () => {
     if (!deletingPersona) return;
 
     try {
@@ -42,46 +43,54 @@ export function PersonasTab() {
     } catch (error) {
       console.error("Failed to delete persona:", error);
     }
-  };
+  }, [deletingPersona, removePersona]);
 
-  const handleToggleBuiltInPersona = async (
-    personaId: Id<"personas">,
-    isDisabled: boolean
-  ) => {
-    try {
-      await toggleBuiltInPersona({ personaId, isDisabled });
-    } catch (error) {
-      console.error("Failed to toggle built-in persona:", error);
-    }
-  };
+  const handleToggleBuiltInPersona = useCallback(
+    async (personaId: Id<"personas">, isDisabled: boolean) => {
+      try {
+        await toggleBuiltInPersona({ personaId, isDisabled });
+      } catch (error) {
+        console.error("Failed to toggle built-in persona:", error);
+      }
+    },
+    [toggleBuiltInPersona]
+  );
 
-  const isPersonaDisabled = (personaId: Id<"personas">) => {
-    return (
-      userPersonaSettings?.some(
-        setting => setting.personaId === personaId && setting.isDisabled
-      ) || false
-    );
-  };
+  const isPersonaDisabled = useCallback(
+    (personaId: Id<"personas">) => {
+      return (
+        userPersonaSettings?.some(
+          setting => setting.personaId === personaId && setting.isDisabled
+        ) || false
+      );
+    },
+    [userPersonaSettings]
+  );
 
-  const handleTogglePersonasGlobally = async (enabled: boolean) => {
-    try {
-      await togglePersonasEnabled({ enabled });
-    } catch (error) {
-      console.error("Failed to toggle personas globally:", error);
-    }
-  };
+  const handleTogglePersonasGlobally = useCallback(
+    async (enabled: boolean) => {
+      try {
+        await togglePersonasEnabled({ enabled });
+      } catch (error) {
+        console.error("Failed to toggle personas globally:", error);
+      }
+    },
+    [togglePersonasEnabled]
+  );
+
+  const handleCreatePersona = useCallback(() => {
+    router.push("/settings/personas/new");
+  }, [router]);
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold">Personas</h2>
-          <p className="text-muted-foreground">
-            Manage custom system prompts for different conversation styles
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Button onClick={() => router.push("/settings/personas/new")}>
+      <div className="flex items-start justify-between">
+        <SettingsHeader
+          title="Personas"
+          description="Manage custom system prompts for different conversation styles"
+        />
+        <div className="flex gap-2 shrink-0">
+          <Button variant="emerald" onClick={handleCreatePersona}>
             <Plus className="h-4 w-4 mr-2" />
             Create Persona
           </Button>

@@ -69,7 +69,7 @@ export function Header({
           {/* Settings button - only show for authenticated users */}
           {user && !user.isAnonymous && (
             <Link href="/settings">
-              <Button variant="ghost" size="sm" className="h-8 px-3">
+              <Button variant="ghost" size="sm">
                 <Settings className="h-4 w-4 mr-2" />
                 Settings
               </Button>

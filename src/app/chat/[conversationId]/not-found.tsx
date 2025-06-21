@@ -21,14 +21,14 @@ export default function ChatNotFound() {
         </div>
 
         <div className="space-y-3">
-          <Button asChild className="w-full">
+          <Button asChild size="full">
             <Link href="/">
               <Plus className="mr-2 h-4 w-4" />
               Start New Chat
             </Link>
           </Button>
 
-          <Button asChild variant="outline" className="w-full">
+          <Button asChild variant="outline" size="full">
             <Link href="/">
               <Home className="mr-2 h-4 w-4" />
               Go Home

@@ -65,8 +65,15 @@ export const ChatInput = React.memo(
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const inputControlsRef = useRef<{ handleSubmit: () => void } | null>(null);
 
-    const { messageCount, remainingMessages, hasMessageLimit, canSendMessage } =
-      useUser();
+    const {
+      messageCount,
+      remainingMessages,
+      hasMessageLimit,
+      canSendMessage,
+      isAnonymous,
+      monthlyUsage,
+      hasUserApiKeys,
+    } = useUser();
 
     const currentModel = selectedModel
       ? {
@@ -153,8 +160,14 @@ export const ChatInput = React.memo(
 
     let placeholderText = props.placeholder || "Ask me anything...";
     if (!canSendMessage && hasMessageLimit) {
-      placeholderText =
-        "Message limit reached. Sign in to continue chatting...";
+      if (isAnonymous) {
+        placeholderText =
+          "Message limit reached. Sign in to continue chatting...";
+      } else {
+        placeholderText = hasUserApiKeys
+          ? "Monthly Polly model limit reached. Use BYOK models or wait for reset..."
+          : "Monthly limit reached. Add API keys to use BYOK models...";
+      }
     } else if (hasApiKeys === undefined || hasEnabledModels === undefined) {
       placeholderText = "Loading...";
     }
@@ -181,9 +194,22 @@ export const ChatInput = React.memo(
             <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 z-10">
               <div className="inline-flex items-center gap-2 p-2.5 rounded-md bg-amber-50 border border-amber-200 dark:bg-amber-900 dark:border-amber-800 transition-all duration-200 text-xs text-amber-800 dark:text-amber-200 shadow-lg">
                 <span>
-                  {remainingMessages} message
-                  {remainingMessages === 1 ? "" : "s"} remaining • Sign in for
-                  unlimited chats
+                  {isAnonymous ? (
+                    <>
+                      {remainingMessages} message
+                      {remainingMessages === 1 ? "" : "s"} remaining • Sign in
+                      for unlimited chats
+                    </>
+                  ) : (
+                    <>
+                      {monthlyUsage?.remainingMessages || 0} monthly message
+                      {monthlyUsage?.remainingMessages === 1 ? "" : "s"}{" "}
+                      remaining •
+                      {hasUserApiKeys
+                        ? " Use BYOK models for unlimited chats"
+                        : " Add API keys for unlimited chats"}
+                    </>
+                  )}
                 </span>
                 <button
                   onClick={() => setIsLimitWarningDismissed(true)}
@@ -200,8 +226,16 @@ export const ChatInput = React.memo(
             <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 z-10">
               <div className="inline-flex items-center gap-2 p-2.5 rounded-md bg-red-50 border border-red-200 dark:bg-red-900 dark:border-red-800 transition-all duration-200 text-xs text-red-800 dark:text-red-200 shadow-lg">
                 <span>
-                  Message limit reached. Sign in to continue chatting without
-                  limits.
+                  {isAnonymous ? (
+                    "Message limit reached. Sign in to continue chatting without limits."
+                  ) : (
+                    <>
+                      Monthly Polly model limit reached.
+                      {hasUserApiKeys
+                        ? " Use your BYOK models to continue chatting."
+                        : " Add API keys to access BYOK models."}
+                    </>
+                  )}
                 </span>
               </div>
             </div>
