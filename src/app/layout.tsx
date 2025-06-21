@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, Geist_Mono } from "next/font/google";
 import { cookies } from "next/headers";
 import { ThemeProvider } from "@/providers/theme-provider";
+import { SidebarProvider } from "@/providers/sidebar-provider";
 import { ConvexClientProvider } from "@/providers/convex-provider";
 import { ThinkingProvider } from "@/providers/thinking-provider";
 import { QueryProvider } from "@/providers/query-provider";
@@ -96,12 +97,19 @@ async function getServerSideTheme() {
   return "light";
 }
 
+async function getServerSideSidebar() {
+  // Server always returns false to prevent hydration mismatch
+  // The actual state will be determined client-side after mount
+  return false;
+}
+
 export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   const serverTheme = await getServerSideTheme();
+  const serverSidebarVisible = await getServerSideSidebar();
 
   return (
     <html lang="en" className={serverTheme} suppressHydrationWarning>
@@ -119,19 +127,21 @@ export default async function RootLayout({
         />
       </head>
       <body
-        className={`${inter.variable} ${geistMono.variable} antialiased relative font-sans`}
+        className={`${inter.variable} ${geistMono.variable} antialiased relative font-sans overflow-x-hidden`}
       >
         <ThemeProvider serverTheme={serverTheme}>
-          <ConvexClientProvider>
-            <QueryProvider>
-              <TooltipProvider>
-                <ThinkingProvider>
-                  <AppProvider>{children}</AppProvider>
-                  <Toaster />
-                </ThinkingProvider>
-              </TooltipProvider>
-            </QueryProvider>
-          </ConvexClientProvider>
+          <SidebarProvider serverSidebarVisible={serverSidebarVisible}>
+            <ConvexClientProvider>
+              <QueryProvider>
+                <TooltipProvider>
+                  <ThinkingProvider>
+                    <AppProvider>{children}</AppProvider>
+                    <Toaster />
+                  </ThinkingProvider>
+                </TooltipProvider>
+              </QueryProvider>
+            </ConvexClientProvider>
+          </SidebarProvider>
         </ThemeProvider>
       </body>
     </html>

@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { api } from "../../../convex/_generated/api";
 import Image from "next/image";
 import Link from "next/link";
+import { useSidebar } from "@/hooks/use-sidebar";
+import { cn } from "@/lib/utils";
 
 interface UserSectionContentProps {
   user:
@@ -28,14 +30,22 @@ interface UserSectionContentProps {
 }
 
 function UserSectionContent({ user, token }: UserSectionContentProps) {
+  const { isMobile } = useSidebar();
+
   if (!token || !user) {
     return (
-      <Link href="/auth" className="block w-full px-4 py-6">
+      <Link
+        href="/auth"
+        className={cn("block w-full", isMobile ? "px-3 py-8" : "px-4 py-6")}
+      >
         <Button
           variant="ghost"
-          className="w-full flex items-center justify-start gap-3 text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+          className={cn(
+            "w-full flex items-center justify-start gap-3 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors touch-manipulation",
+            isMobile ? "text-base py-6" : "text-sm"
+          )}
         >
-          <LogIn className="h-4 w-4" />
+          <LogIn className={cn(isMobile ? "h-5 w-5" : "h-4 w-4")} />
           Sign In
         </Button>
       </Link>
@@ -43,15 +53,27 @@ function UserSectionContent({ user, token }: UserSectionContentProps) {
   }
 
   return (
-    <Link href="/settings" className="block w-full px-4 py-2">
-      <Button variant="ghost" className="w-full py-6 justify-start gap-3">
+    <Link
+      href="/settings"
+      className={cn("block w-full", isMobile ? "px-3 py-4" : "px-4 py-2")}
+    >
+      <Button
+        variant="ghost"
+        className={cn(
+          "w-full justify-start gap-3 touch-manipulation",
+          isMobile ? "py-8 text-base" : "py-6 text-sm"
+        )}
+      >
         {user.image ? (
           <Image
             src={user.image}
             alt={user.name || "User avatar"}
-            width={24}
-            height={24}
-            className="w-6 h-6 rounded-full object-cover"
+            width={isMobile ? 32 : 24}
+            height={isMobile ? 32 : 24}
+            className={cn(
+              "rounded-full object-cover",
+              isMobile ? "w-8 h-8" : "w-6 h-6"
+            )}
             unoptimized
             onError={e => {
               const target = e.target as HTMLImageElement;
@@ -63,13 +85,27 @@ function UserSectionContent({ user, token }: UserSectionContentProps) {
             }}
           />
         ) : (
-          <div className="w-6 h-6 rounded-full bg-gradient-tropical flex items-center justify-center">
-            <User className="h-3 w-3 text-white" />
+          <div
+            className={cn(
+              "rounded-full bg-gradient-tropical flex items-center justify-center",
+              isMobile ? "w-8 h-8" : "w-6 h-6"
+            )}
+          >
+            <User
+              className={cn("text-white", isMobile ? "h-4 w-4" : "h-3 w-3")}
+            />
           </div>
         )}
         {user.image && (
-          <div className="w-6 h-6 rounded-full bg-gradient-tropical items-center justify-center hidden">
-            <User className="h-3 w-3 text-white" />
+          <div
+            className={cn(
+              "rounded-full bg-gradient-tropical items-center justify-center hidden",
+              isMobile ? "w-8 h-8" : "w-6 h-6"
+            )}
+          >
+            <User
+              className={cn("text-white", isMobile ? "h-4 w-4" : "h-3 w-3")}
+            />
           </div>
         )}
         <span className="truncate">{user.name || user.email || "User"}</span>
@@ -81,13 +117,26 @@ function UserSectionContent({ user, token }: UserSectionContentProps) {
 export function UserSection() {
   const token = useAuthToken();
   const user = useQuery(api.users.getCurrentUser);
+  const { isMobile } = useSidebar();
 
   if (token === undefined && user === undefined) {
     return (
-      <div className="p-6 flex-shrink-0">
-        <div className="flex items-center gap-3 text-sm text-muted-foreground">
-          <div className="w-6 h-6 rounded-full bg-gradient-tropical flex items-center justify-center">
-            <User className="h-3 w-3 text-white" />
+      <div className={cn("flex-shrink-0", isMobile ? "p-3" : "p-4")}>
+        <div
+          className={cn(
+            "flex items-center gap-3 text-muted-foreground",
+            isMobile ? "text-base" : "text-sm"
+          )}
+        >
+          <div
+            className={cn(
+              "rounded-full bg-gradient-tropical flex items-center justify-center",
+              isMobile ? "w-8 h-8" : "w-6 h-6"
+            )}
+          >
+            <User
+              className={cn("text-white", isMobile ? "h-4 w-4" : "h-3 w-3")}
+            />
           </div>
           <span>Loading...</span>
         </div>
