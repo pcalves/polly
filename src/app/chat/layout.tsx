@@ -2,11 +2,8 @@
 
 import { Header } from "@/components/header";
 import { Sidebar } from "@/components/sidebar";
-import { ChatContainer } from "@/components/chat-container";
-import { useSettings } from "@/hooks/use-settings";
-import { useConversations } from "@/hooks/use-conversations";
 import { useState, useEffect, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { ConversationId } from "@/types";
 
 const SIDEBAR_STORAGE_KEY = "sidebar-visible";
@@ -33,10 +30,14 @@ function saveSidebarVisibility(isVisible: boolean): void {
   }
 }
 
-export default function HomePage() {
-  const { settings, updateSettings } = useSettings();
-  const { createNewConversation } = useConversations();
+export default function ChatLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  // Settings are now managed at the ChatInput level
   const [isSidebarVisible, setIsSidebarVisible] = useState(true);
+  const params = useParams();
   const router = useRouter();
 
   // Load sidebar visibility on mount
@@ -51,23 +52,13 @@ export default function HomePage() {
     saveSidebarVisibility(newVisibility);
   }, [isSidebarVisible]);
 
-  const handleNewConversation = useCallback(async () => {
-    const conversationId = await createNewConversation("New conversation");
-    if (conversationId) {
-      router.push(`/chat/${conversationId}`);
-    }
-  }, [createNewConversation, router]);
+  const handleNewConversation = useCallback(() => {
+    router.push("/");
+  }, [router]);
 
   const handleConversationSelect = useCallback((id: string) => {
     router.push(`/chat/${id}`);
   }, [router]);
-
-  const handleInputStart = useCallback(async () => {
-    const conversationId = await createNewConversation("New conversation");
-    if (conversationId) {
-      router.push(`/chat/${conversationId}`);
-    }
-  }, [createNewConversation, router]);
 
   return (
     <div className="h-screen flex flex-col">
@@ -77,31 +68,13 @@ export default function HomePage() {
       />
       <div className="flex-1 flex overflow-hidden">
         <Sidebar 
-          currentConversationId={undefined}
+          currentConversationId={params.conversationId as ConversationId}
           onConversationSelect={handleConversationSelect}
           onNewConversation={handleNewConversation}
           isVisible={isSidebarVisible}
         />
         <div className="flex-1">
-          <ChatContainer 
-            conversationId={undefined}
-            settings={settings}
-            onSettingsChange={updateSettings}
-            onConversationCreate={(id: ConversationId, pendingMessage) => {
-              console.log("🏠 Main page: onConversationCreate called", { id, pendingMessage });
-              if (pendingMessage) {
-                const key = `pending-message-${id}`;
-                const data = JSON.stringify(pendingMessage);
-                console.log("💾 Storing pending message:", { key, data });
-                sessionStorage.setItem(key, data);
-                console.log("✅ Stored in sessionStorage, now redirecting...");
-              }
-              router.push(`/chat/${id}`);
-            }}
-            onInputStart={handleInputStart}
-            className="h-full"
-            isSidebarVisible={isSidebarVisible}
-          />
+          {children}
         </div>
       </div>
     </div>
