@@ -496,7 +496,6 @@ export const streamResponse = action({
           providerMetadata,
         }) => {
           // Extract reasoning if embedded in content
-          let finalContent = text;
           let extractedReasoning = reasoning || "";
 
           if (!extractedReasoning) {
@@ -511,7 +510,12 @@ export const streamResponse = action({
               const match = text.match(pattern);
               if (match) {
                 extractedReasoning = match[1].trim();
-                finalContent = text.replace(pattern, "").trim();
+                // If reasoning was embedded in content, we need to clean it from the final message
+                const cleanedContent = text.replace(pattern, "").trim();
+                await ctx.runMutation(internal.messages.internalUpdate, {
+                  id: args.messageId,
+                  content: cleanedContent,
+                });
                 break;
               }
             }
@@ -567,9 +571,9 @@ export const streamResponse = action({
             }));
           }
 
-          // Final update with all data
+          // Update only metadata (reasoning, citations, finish reason)
+          // Content is already being streamed incrementally, so don't update it here
           await updateMessage(ctx, args.messageId, {
-            content: finalContent,
             reasoning: extractedReasoning || undefined,
             finishReason: finishReason || "stop",
             citations,
