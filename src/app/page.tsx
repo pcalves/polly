@@ -7,17 +7,9 @@ import { ChatZeroState } from "@/components/chat-zero-state";
 export default function HomePage() {
   return (
     <SharedChatLayout>
-      <div className="flex h-full">
-        <div className="flex-1 flex flex-col relative h-full overflow-hidden">
-          <div className="flex-1 overflow-hidden">
-            <div className="h-full flex flex-col relative overflow-hidden">
-              <div className="relative z-10 flex flex-col h-full">
-                <div className="flex-1 overflow-y-auto overflow-x-hidden">
-                  <ChatZeroState />
-                </div>
-              </div>
-            </div>
-          </div>
+      <div className="h-full w-full min-w-0 overflow-hidden flex items-center justify-center sm:flex sm:items-center sm:justify-center">
+        <div className="w-full max-w-3xl min-w-0 px-2 sm:px-4 lg:px-8 h-full sm:h-auto flex flex-col sm:block">
+          <ChatZeroState />
         </div>
       </div>
     </SharedChatLayout>

@@ -30,7 +30,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
           cancelButton:
             "group-[.toast]:bg-muted group-[.toast]:text-muted-foreground group-[.toast]:hover:bg-muted/80 group-[.toast]:rounded-lg group-[.toast]:font-medium group-[.toast]:px-3 group-[.toast]:py-1.5 group-[.toast]:text-body-sm group-[.toast]:transition-all group-[.toast]:duration-200",
           success:
-            "group-[.toaster]:border-accent-emerald/30 group-[.toaster]:bg-gradient-to-br group-[.toaster]:from-emerald-50/80 group-[.toaster]:to-emerald-100/40 group-[.toaster]:text-emerald-900 group-[.toaster]:shadow-emerald-200/50 dark:group-[.toaster]:border-accent-emerald/40 dark:group-[.toaster]:from-emerald-950/60 dark:group-[.toaster]:to-emerald-900/20 dark:group-[.toaster]:text-emerald-100 dark:group-[.toaster]:shadow-emerald-500/20",
+            "group-[.toaster]:border-accent-coral/30 group-[.toaster]:bg-gradient-to-br group-[.toaster]:from-coral-50/80 group-[.toaster]:to-coral-100/40 group-[.toaster]:text-coral-900 group-[.toaster]:shadow-coral-200/50 dark:group-[.toaster]:border-accent-coral/40 dark:group-[.toaster]:from-coral-950/60 dark:group-[.toaster]:to-coral-900/20 dark:group-[.toaster]:text-coral-100 dark:group-[.toaster]:shadow-coral-500/20",
           error:
             "group-[.toaster]:border-red-300/30 group-[.toaster]:bg-gradient-to-br group-[.toaster]:from-red-50/80 group-[.toaster]:to-red-100/40 group-[.toaster]:text-red-900 group-[.toaster]:shadow-red-200/50 dark:group-[.toaster]:border-red-400/40 dark:group-[.toaster]:from-red-950/60 dark:group-[.toaster]:to-red-900/20 dark:group-[.toaster]:text-red-100 dark:group-[.toaster]:shadow-red-500/20",
           warning:

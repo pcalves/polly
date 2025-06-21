@@ -33,7 +33,7 @@ export function QuoteButton({ onQuote, rect, className }: QuoteButtonProps) {
       <Button
         size="sm"
         onClick={onQuote}
-        className="h-8 px-3 bg-gradient-to-br from-accent-emerald to-accent-emerald/90 hover:from-accent-emerald/90 hover:to-accent-emerald text-white shadow-lg hover:shadow-xl border-0 transition-all duration-200 hover:scale-105"
+        className="h-8 px-3 bg-gradient-to-br from-accent-coral to-accent-coral/90 hover:from-accent-coral/90 hover:to-accent-coral text-white shadow-lg hover:shadow-xl border-0 transition-all duration-200 hover:scale-105"
       >
         <Quote className="h-3.5 w-3.5 mr-1.5" />
         Quote

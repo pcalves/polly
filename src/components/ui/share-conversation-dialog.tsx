@@ -149,7 +149,7 @@ export function ShareConversationDialog({
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="sm:max-w-lg">
-        <DialogHeader className="text-center">
+        <DialogHeader>
           <DialogTitle className="text-xl font-semibold">
             {isShared ? "Conversation is shared" : "Share conversation"}
           </DialogTitle>
@@ -182,7 +182,7 @@ export function ShareConversationDialog({
                             onClick={handleCopyUrl}
                             className={cn(
                               "h-8 w-8 p-0 transition-colors",
-                              isCopied && "text-emerald-600"
+                              isCopied && "text-coral-600"
                             )}
                             disabled={isCopied}
                           >
@@ -278,7 +278,7 @@ export function ShareConversationDialog({
               <Button
                 onClick={handleShare}
                 disabled={isSharing}
-                className="w-full h-11 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700"
+                className="w-full h-11 bg-gradient-to-r from-coral-600 to-orange-600 hover:from-coral-700 hover:to-orange-700"
               >
                 {isSharing ? (
                   <>

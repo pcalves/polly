@@ -159,7 +159,7 @@ function CodeBlockComponent({
               >
                 <div className="relative h-4 w-4">
                   {copied ? (
-                    <Check className="h-3 w-3 text-accent-emerald absolute inset-0 transition-all duration-200" />
+                    <Check className="h-3 w-3 text-accent-coral absolute inset-0 transition-all duration-200" />
                   ) : (
                     <Copy className="h-3 w-3 absolute inset-0 transition-all duration-200" />
                   )}

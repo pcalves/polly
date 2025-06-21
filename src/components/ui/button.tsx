@@ -24,7 +24,7 @@ const buttonVariants = cva(
         coral:
           "bg-accent-coral text-white dark:text-white shadow-md hover:bg-accent-coral/90 hover:shadow-lg transition-all duration-200",
         emerald:
-          "bg-accent-emerald text-slate-800 dark:text-slate-800 shadow-md hover:bg-accent-emerald/90 hover:shadow-lg hover:scale-105 transition-all duration-300",
+          "bg-accent-emerald text-white dark:text-white shadow-md hover:bg-accent-emerald/90 hover:shadow-lg hover:scale-105 transition-all duration-300",
         yellow:
           "bg-accent-yellow text-slate-800 dark:text-slate-800 shadow-md hover:bg-accent-yellow/90 hover:shadow-lg transition-all duration-200",
         purple:

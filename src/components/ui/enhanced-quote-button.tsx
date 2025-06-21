@@ -72,7 +72,7 @@ export function EnhancedQuoteButton({
             <Button
               size="sm"
               onClick={handleQuote}
-              className="h-8 px-3 bg-gradient-to-br from-accent-emerald to-accent-emerald hover:from-accent-emerald hover:to-accent-emerald/90 text-white shadow-lg hover:shadow-xl border-0 transition-all duration-200"
+              className="h-8 px-3 bg-gradient-to-br from-accent-coral to-accent-coral hover:from-accent-coral hover:to-accent-coral/90 text-white shadow-lg hover:shadow-xl border-0 transition-all duration-200"
             >
               <Quote className="h-3.5 w-3.5 mr-1.5" />
               Quote

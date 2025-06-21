@@ -25,7 +25,7 @@ interface NotificationDialogProps {
 const typeConfig = {
   success: {
     icon: CheckCircle,
-    className: "text-green-500",
+    className: "text-coral-500",
   },
   error: {
     icon: XCircle,
