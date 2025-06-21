@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { setThemeCookie } from "@/lib/theme-utils";
+import { setThemeCookie, withDisabledAnimations } from "@/lib/theme-utils";
 import { useServerTheme } from "@/providers/theme-provider";
 
 export function useTheme() {
@@ -20,16 +20,18 @@ export function useTheme() {
   const theme = mounted ? clientTheme : serverTheme;
 
   const setTheme = useCallback((newTheme: "light" | "dark") => {
-    // Update HTML class immediately
-    const htmlElement = document.documentElement;
-    htmlElement.classList.remove("light", "dark");
-    htmlElement.classList.add(newTheme);
+    withDisabledAnimations(() => {
+      // Update HTML class immediately
+      const htmlElement = document.documentElement;
+      htmlElement.classList.remove("light", "dark");
+      htmlElement.classList.add(newTheme);
 
-    // Update state
-    setClientTheme(newTheme);
+      // Update state
+      setClientTheme(newTheme);
 
-    // Update cookie
-    setThemeCookie(newTheme);
+      // Update cookie
+      setThemeCookie(newTheme);
+    });
   }, []);
 
   const toggleTheme = useCallback(() => {

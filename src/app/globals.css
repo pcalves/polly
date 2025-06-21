@@ -2,6 +2,16 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Disable animations during theme switching */
+.disable-animations *,
+.disable-animations *::before,
+.disable-animations *::after {
+  animation-duration: 0s !important;
+  animation-delay: 0s !important;
+  transition-duration: 0s !important;
+  transition-delay: 0s !important;
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;

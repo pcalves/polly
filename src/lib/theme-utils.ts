@@ -20,3 +20,28 @@ export function getThemeFromCookie(cookieString?: string): string | null {
 
   return null;
 }
+
+export function disableAnimations() {
+  if (typeof document === "undefined") return;
+
+  document.documentElement.classList.add("disable-animations");
+}
+
+export function enableAnimations() {
+  if (typeof document === "undefined") return;
+
+  document.documentElement.classList.remove("disable-animations");
+}
+
+export function withDisabledAnimations(fn: () => void) {
+  disableAnimations();
+
+  fn();
+
+  // Re-enable animations after a short delay to allow DOM changes to settle
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      enableAnimations();
+    });
+  });
+}
