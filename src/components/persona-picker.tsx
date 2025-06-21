@@ -67,34 +67,96 @@ export function PersonaPicker({
 
   if (compact) {
     return (
+      <>
+        {/* Backdrop blur overlay */}
+        {open && (
+          <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 animate-in fade-in-0 duration-200" />
+        )}
+
+        <Popover open={open} onOpenChange={setOpen}>
+          <PopoverTrigger asChild>
+            <Button
+              variant="ghost"
+              size="sm"
+              className={cn(
+                "h-auto text-xs font-medium text-muted-foreground/80 hover:text-foreground",
+                className
+              )}
+            >
+              {currentPersona ? (
+                <span className="text-lg">{currentPersona.icon}</span>
+              ) : (
+                <User className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors" />
+              )}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent
+            className="w-[min(calc(100vw-2rem),380px)] p-0 data-[side=top]:animate-in data-[side=top]:slide-in-from-bottom-4"
+            side="top"
+            sideOffset={4}
+            collisionPadding={16}
+            avoidCollisions={true}
+          >
+            <PersonaList
+              personas={availablePersonas}
+              currentPersona={currentPersona}
+              onPersonaSelect={handlePersonaSelect}
+            />
+          </PopoverContent>
+        </Popover>
+      </>
+    );
+  }
+
+  return (
+    <>
+      {/* Backdrop blur overlay */}
+      {open && (
+        <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 animate-in fade-in-0 duration-200" />
+      )}
+
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <Button
-            variant="ghost"
-            size="sm"
-            className={cn(
-              "h-auto text-xs font-medium text-muted-foreground/80 hover:text-foreground",
-              className
-            )}
+            variant="outline"
+            role="combobox"
+            aria-expanded={open}
+            className={cn("w-full justify-between", className)}
           >
-            {currentPersona ? (
-              <>
-                <span className="mr-1">{currentPersona.icon}</span>
-                <span className="text-muted-foreground group-hover:text-foreground transition-colors">
-                  {currentPersona.name}
-                </span>
-              </>
-            ) : (
-              <>
-                <User className="h-3 w-3 text-muted-foreground group-hover:text-foreground transition-colors" />
-                <span className="ml-1.5 text-xs font-medium text-muted-foreground group-hover:text-foreground transition-colors">
-                  Persona
-                </span>
-              </>
-            )}
+            <div className="flex items-center gap-2">
+              {currentPersona ? (
+                <>
+                  <span className="text-lg">{currentPersona.icon}</span>
+                  <div className="text-left">
+                    <div className="font-medium">{currentPersona.name}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {currentPersona.description}
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="flex items-center justify-center w-8 h-8 rounded-full bg-muted/40">
+                    <User className="h-4 w-4 text-muted-foreground" />
+                  </div>
+                  <div className="text-left">
+                    <div className="font-medium">Default</div>
+                    <div className="text-xs text-muted-foreground">
+                      Standard AI assistant behavior
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-80 p-0" align="start">
+        <PopoverContent
+          className="w-[min(calc(100vw-2rem),380px)] p-0 data-[side=top]:animate-in data-[side=top]:slide-in-from-bottom-4"
+          side="top"
+          sideOffset={4}
+          collisionPadding={16}
+          avoidCollisions={true}
+        >
           <PersonaList
             personas={availablePersonas}
             currentPersona={currentPersona}
@@ -102,53 +164,7 @@ export function PersonaPicker({
           />
         </PopoverContent>
       </Popover>
-    );
-  }
-
-  return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          role="combobox"
-          aria-expanded={open}
-          className={cn("w-full justify-between", className)}
-        >
-          <div className="flex items-center gap-2">
-            {currentPersona ? (
-              <>
-                <span className="text-lg">{currentPersona.icon}</span>
-                <div className="text-left">
-                  <div className="font-medium">{currentPersona.name}</div>
-                  <div className="text-xs text-muted-foreground">
-                    {currentPersona.description}
-                  </div>
-                </div>
-              </>
-            ) : (
-              <>
-                <div className="flex items-center justify-center w-8 h-8 rounded-full bg-muted/40">
-                  <User className="h-4 w-4 text-muted-foreground" />
-                </div>
-                <div className="text-left">
-                  <div className="font-medium">Default</div>
-                  <div className="text-xs text-muted-foreground">
-                    Standard AI assistant behavior
-                  </div>
-                </div>
-              </>
-            )}
-          </div>
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-full p-0">
-        <PersonaList
-          personas={availablePersonas}
-          currentPersona={currentPersona}
-          onPersonaSelect={handlePersonaSelect}
-        />
-      </PopoverContent>
-    </Popover>
+    </>
   );
 }
 
@@ -184,9 +200,9 @@ function PersonaList({
   const customPersonas = personas?.filter(p => !p.isBuiltIn) || [];
 
   return (
-    <Command>
+    <Command className="pt-2">
       <CommandInput placeholder="Search personas..." />
-      <CommandList>
+      <CommandList className="max-h-[calc(100vh-10rem)] sm:max-h-[350px]">
         <CommandEmpty>
           <div className="flex flex-col items-center gap-2 py-4">
             <User className="h-8 w-8 text-muted-foreground" />
@@ -207,7 +223,7 @@ function PersonaList({
           <CommandItem
             value="default"
             onSelect={() => onPersonaSelect(null)}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 py-3 sm:py-2 px-4 sm:px-3 min-h-[44px] sm:min-h-0"
           >
             <span className="text-lg">🤖</span>
             <div className="flex-1">
@@ -216,9 +232,7 @@ function PersonaList({
                 Standard AI assistant behavior
               </div>
             </div>
-            {!currentPersona && (
-              <Check className="h-4 w-4 text-accent-emerald" />
-            )}
+            {!currentPersona && <Check className="h-4 w-4 text-accent-coral" />}
           </CommandItem>
         </CommandGroup>
 
@@ -239,7 +253,7 @@ function PersonaList({
                   key={persona._id}
                   value={persona.name}
                   onSelect={() => onPersonaSelect(persona._id)}
-                  className="flex items-center gap-2"
+                  className="flex items-center gap-2 py-3 sm:py-2 px-4 sm:px-3 min-h-[44px] sm:min-h-0"
                 >
                   <span className="text-lg">{persona.icon || "🤖"}</span>
                   <div className="flex-1">
@@ -249,7 +263,7 @@ function PersonaList({
                     </div>
                   </div>
                   {currentPersona?._id === persona._id && (
-                    <Check className="h-4 w-4 text-accent-emerald" />
+                    <Check className="h-4 w-4 text-accent-coral" />
                   )}
                 </CommandItem>
               ))}
@@ -274,7 +288,7 @@ function PersonaList({
                   key={persona._id}
                   value={persona.name}
                   onSelect={() => onPersonaSelect(persona._id)}
-                  className="flex items-center gap-2"
+                  className="flex items-center gap-2 py-3 sm:py-2 px-4 sm:px-3 min-h-[44px] sm:min-h-0"
                 >
                   <span className="text-lg">{persona.icon || "🤖"}</span>
                   <div className="flex-1">
@@ -284,7 +298,7 @@ function PersonaList({
                     </div>
                   </div>
                   {currentPersona?._id === persona._id && (
-                    <Check className="h-4 w-4 text-accent-emerald" />
+                    <Check className="h-4 w-4 text-accent-coral" />
                   )}
                 </CommandItem>
               ))}

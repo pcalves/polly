@@ -79,7 +79,7 @@ const ModelCard = memo(
       <div
         className={`relative p-4 rounded-lg border transition-all duration-200 group cursor-pointer h-[150px] ${
           isEnabled
-            ? "border-accent-emerald/50 bg-accent-emerald/5 hover:border-accent-emerald/70"
+            ? "border-accent-coral/50 bg-accent-coral/5 hover:border-accent-coral/70"
             : "border-border/40 hover:border-border bg-card hover:bg-muted/30"
         }`}
         onClick={handleClick}
@@ -93,7 +93,7 @@ const ModelCard = memo(
               {model.free && (
                 <Badge
                   variant="secondary"
-                  className="text-[10px] px-1.5 py-0 h-5 bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-800 shrink-0"
+                  className="text-[10px] px-1.5 py-0 h-5 bg-coral-100 text-coral-700 border-coral-200 dark:bg-coral-950 dark:text-coral-300 dark:border-coral-800 shrink-0"
                 >
                   Free
                 </Badge>

@@ -107,14 +107,14 @@ const ModelItem = memo(
         key={model.modelId}
         value={`${model.name} ${model.provider} ${model.modelId}`}
         onSelect={handleSelect}
-        className="py-2.5 px-3 cursor-pointer"
+        className="py-3 sm:py-2.5 px-4 sm:px-3 cursor-pointer min-h-[44px] sm:min-h-0"
       >
         <div className="flex items-center justify-between w-full">
           <div className="flex items-center gap-2 min-w-0 flex-1">
             {model.free && (
               <Badge
                 variant="secondary"
-                className="text-[10px] px-1.5 py-0 h-5 bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-800 shrink-0"
+                className="text-[10px] px-1.5 py-0 h-5 bg-coral-100 text-coral-700 border-coral-200 dark:bg-coral-950 dark:text-coral-300 dark:border-coral-800 shrink-0"
               >
                 Free
               </Badge>
@@ -219,124 +219,131 @@ function ModelPickerComponent({ className }: ModelPickerProps) {
   // Anonymous user case - show default model but allow opening for upsell
   if (!isAuthenticated) {
     return (
-      <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger asChild>
-          <Button
-            variant="ghost"
-            role="combobox"
-            aria-expanded={open}
-            className={cn(
-              "h-auto text-xs font-medium text-muted-foreground/80 hover:text-foreground group",
-              className
-            )}
-          >
-            <Sparkles className="h-3.5 w-3.5 text-emerald-500 transition-colors" />
-            <span className="ml-1.5 text-xs font-medium text-muted-foreground group-hover:text-foreground transition-colors truncate">
-              {displayName}
-            </span>
-            <ChevronDown
-              className={cn(
-                "ml-1.5 h-3 w-3 text-muted-foreground group-hover:text-foreground transition-all duration-200 shrink-0",
-                open && "rotate-180"
-              )}
-            />
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent
-          className="w-[480px] p-0 overflow-hidden"
-          align="start"
-          side="top"
-          sideOffset={8}
-          alignOffset={-12}
-        >
-          {/* Subtle background overlay */}
-          <div className="absolute inset-0 bg-accent-emerald/3 pointer-events-none" />
+      <>
+        {/* Backdrop blur overlay */}
+        {open && (
+          <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 animate-in fade-in-0 duration-200" />
+        )}
 
-          <div className="relative p-8 text-center">
-            {/* Sparkle icon with consistent accent color */}
-            <div className="w-16 h-16 rounded-full bg-accent-emerald flex items-center justify-center mx-auto mb-5 shadow-lg shadow-accent-emerald/25">
-              <Sparkles className="h-8 w-8 text-white" />
-            </div>
-
-            {/* Refined headline */}
-            <h3 className="text-lg font-bold mb-2 text-foreground">
-              Unlock Premium Features
-            </h3>
-
-            {/* Professional description */}
-            <p className="text-sm text-muted-foreground leading-relaxed mb-5 font-medium">
-              Sign in to access increased message limits, bring your own API
-              keys, and unlock advanced features for a better AI experience.
-            </p>
-
-            {/* Feature cards - improved colors */}
-            <div className="space-y-4 mb-8">
-              <div className="flex items-center gap-4 p-4 rounded-lg bg-muted/30 dark:bg-muted/20 border border-border/40 hover:border-accent-emerald/40 hover:bg-accent-emerald/5 dark:hover:bg-accent-emerald/10 transition-colors duration-200">
-                <div className="w-10 h-10 rounded-full bg-accent-emerald flex items-center justify-center shadow-md">
-                  <MessageSquare className="h-5 w-5 text-white" />
-                </div>
-                <div className="text-left flex-1">
-                  <div className="text-base font-bold text-foreground">
-                    Higher Message Limits
-                  </div>
-                  <div className="text-sm text-muted-foreground">
-                    More conversations per day
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-4 p-4 rounded-lg bg-muted/30 dark:bg-muted/20 border border-border/40 hover:border-accent-emerald/40 hover:bg-accent-emerald/5 dark:hover:bg-accent-emerald/10 transition-colors duration-200">
-                <div className="w-10 h-10 rounded-full bg-accent-emerald flex items-center justify-center shadow-md">
-                  <Key className="h-5 w-5 text-white" />
-                </div>
-                <div className="text-left flex-1">
-                  <div className="text-base font-bold text-foreground">
-                    Bring Your Own API Keys
-                  </div>
-                  <div className="text-sm text-muted-foreground">
-                    Connect your own OpenAI, Anthropic & Google keys
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-4 p-4 rounded-lg bg-muted/30 dark:bg-muted/20 border border-border/40 hover:border-accent-emerald/40 hover:bg-accent-emerald/5 dark:hover:bg-accent-emerald/10 transition-colors duration-200">
-                <div className="w-10 h-10 rounded-full bg-accent-emerald flex items-center justify-center shadow-md">
-                  <Zap className="h-5 w-5 text-white" />
-                </div>
-                <div className="text-left flex-1">
-                  <div className="text-base font-bold text-foreground">
-                    Advanced Features
-                  </div>
-                  <div className="text-sm text-muted-foreground">
-                    Custom personas, conversation sharing & more
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* CTA button with consistent accent color */}
+        <Popover open={open} onOpenChange={setOpen}>
+          <PopoverTrigger asChild>
             <Button
-              size="full-lg"
-              variant="emerald"
-              className="text-base font-semibold py-4"
-              onClick={() => router.push("/auth")}
+              variant="ghost"
+              role="combobox"
+              aria-expanded={open}
+              className={cn(
+                "h-auto text-xs font-medium text-muted-foreground/80 hover:text-foreground group",
+                className
+              )}
             >
-              Sign In
-            </Button>
-
-            {/* Incentive text with consistent colors */}
-            <p className="text-xs text-muted-foreground mt-3 font-medium">
-              <span className="text-accent-emerald font-semibold">
-                Free to sign up
-              </span>{" "}
-              •{" "}
-              <span className="text-accent-emerald/80 font-semibold">
-                No credit card required
+              <Sparkles className="h-3.5 w-3.5 text-coral-500 transition-colors" />
+              <span className="ml-1.5 text-xs font-medium text-muted-foreground group-hover:text-foreground transition-colors truncate">
+                {displayName}
               </span>
-            </p>
-          </div>
-        </PopoverContent>
-      </Popover>
+              <ChevronDown
+                className={cn(
+                  "ml-1.5 h-3 w-3 text-muted-foreground group-hover:text-foreground transition-all duration-200 shrink-0",
+                  open && "rotate-180"
+                )}
+              />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent
+            className="w-[min(calc(100vw-2rem),380px)] p-0 overflow-hidden data-[side=top]:animate-in data-[side=top]:slide-in-from-bottom-4"
+            side="top"
+            sideOffset={4}
+            collisionPadding={16}
+            avoidCollisions={true}
+          >
+            {/* Subtle background overlay */}
+            <div className="absolute inset-0 bg-accent-coral/3 pointer-events-none" />
+
+            <div className="relative p-8 text-center">
+              {/* Sparkle icon with consistent accent color */}
+              <div className="w-16 h-16 rounded-full bg-accent-coral flex items-center justify-center mx-auto mb-5 shadow-lg shadow-accent-coral/25">
+                <Sparkles className="h-8 w-8 text-white" />
+              </div>
+
+              {/* Refined headline */}
+              <h3 className="text-lg font-bold mb-2 text-foreground">
+                Unlock Premium Features
+              </h3>
+
+              {/* Professional description */}
+              <p className="text-sm text-muted-foreground leading-relaxed mb-5 font-medium">
+                Sign in to access increased message limits, bring your own API
+                keys, and unlock advanced features for a better AI experience.
+              </p>
+
+              {/* Feature cards - improved colors */}
+              <div className="space-y-4 mb-8">
+                <div className="flex items-center gap-4 p-4 rounded-lg bg-muted/30 dark:bg-muted/20 border border-border/40 hover:border-accent-coral/40 hover:bg-accent-coral/5 dark:hover:bg-accent-coral/10 transition-colors duration-200">
+                  <div className="w-10 h-10 rounded-full bg-accent-coral flex items-center justify-center shadow-md">
+                    <MessageSquare className="h-5 w-5 text-white" />
+                  </div>
+                  <div className="text-left flex-1">
+                    <div className="text-base font-bold text-foreground">
+                      Higher Message Limits
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      More conversations per day
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-4 p-4 rounded-lg bg-muted/30 dark:bg-muted/20 border border-border/40 hover:border-accent-coral/40 hover:bg-accent-coral/5 dark:hover:bg-accent-coral/10 transition-colors duration-200">
+                  <div className="w-10 h-10 rounded-full bg-accent-coral flex items-center justify-center shadow-md">
+                    <Key className="h-5 w-5 text-white" />
+                  </div>
+                  <div className="text-left flex-1">
+                    <div className="text-base font-bold text-foreground">
+                      Bring Your Own API Keys
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      Connect your own OpenAI, Anthropic & Google keys
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-4 p-4 rounded-lg bg-muted/30 dark:bg-muted/20 border border-border/40 hover:border-accent-coral/40 hover:bg-accent-coral/5 dark:hover:bg-accent-coral/10 transition-colors duration-200">
+                  <div className="w-10 h-10 rounded-full bg-accent-coral flex items-center justify-center shadow-md">
+                    <Zap className="h-5 w-5 text-white" />
+                  </div>
+                  <div className="text-left flex-1">
+                    <div className="text-base font-bold text-foreground">
+                      Advanced Features
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      Custom personas, conversation sharing & more
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* CTA button with consistent accent color */}
+              <Button
+                size="full-lg"
+                variant="coral"
+                className="text-base font-semibold py-4"
+                onClick={() => router.push("/auth")}
+              >
+                Sign In
+              </Button>
+
+              {/* Incentive text with consistent colors */}
+              <p className="text-xs text-muted-foreground mt-3 font-medium">
+                <span className="text-accent-coral font-semibold">
+                  Free to sign up
+                </span>{" "}
+                •{" "}
+                <span className="text-accent-coral/80 font-semibold">
+                  No credit card required
+                </span>
+              </p>
+            </div>
+          </PopoverContent>
+        </Popover>
+      </>
     );
   }
 
@@ -368,100 +375,109 @@ function ModelPickerComponent({ className }: ModelPickerProps) {
   }
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          variant="ghost"
-          role="combobox"
-          aria-expanded={open}
-          className={cn(
-            "h-auto text-xs font-medium text-muted-foreground/80 hover:text-foreground group",
-            className
-          )}
-        >
-          {selectedModel?.free && (
-            <Badge
-              variant="secondary"
-              className="mr-2 text-[10px] px-1.5 py-0 h-5 bg-emerald-100 text-emerald-700 border-emerald-200 hover:bg-emerald-100 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-800"
-            >
-              Free
-            </Badge>
-          )}
-          <span className="text-xs font-medium text-muted-foreground group-hover:text-foreground transition-colors truncate">
-            {displayName}
-          </span>
-          <ChevronDown
+    <>
+      {/* Backdrop blur overlay */}
+      {open && (
+        <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 animate-in fade-in-0 duration-200" />
+      )}
+
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            variant="ghost"
+            role="combobox"
+            aria-expanded={open}
             className={cn(
-              "ml-1.5 h-3 w-3 text-muted-foreground group-hover:text-foreground transition-all duration-200 shrink-0",
-              open && "rotate-180"
+              "h-auto text-xs font-medium text-muted-foreground/80 hover:text-foreground group",
+              className
             )}
-          />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent
-        className="w-[380px] p-0"
-        align="start"
-        side="top"
-        sideOffset={8}
-        alignOffset={-12}
-      >
-        <Command>
-          <CommandInput placeholder="Search models..." className="h-9" />
-          <CommandList className="max-h-[350px]">
-            <CommandEmpty>
-              <div className="p-4 text-center">
-                <Search className="h-8 w-8 text-muted-foreground/50 mx-auto mb-3" />
-                <p className="text-sm text-muted-foreground mb-1">
-                  No models found
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  Try adjusting your search terms
-                </p>
-              </div>
-            </CommandEmpty>
-
-            {userModelsByProvider?.length === 0 ? (
-              <div className="p-6 text-center">
-                <p className="text-sm text-muted-foreground mb-2">
-                  No models available
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  Add API keys and configure models in Settings
-                </p>
-              </div>
-            ) : (
-              userModelsByProvider?.map((provider, providerIndex) => {
-                const providerConfig =
-                  PROVIDER_CONFIG[provider.id as keyof typeof PROVIDER_CONFIG];
-                const providerTitle = providerConfig?.title || provider.name;
-                const providerIcon = providerConfig?.icon || provider.id;
-
-                return (
-                  <CommandGroup key={provider.id}>
-                    <div className="flex items-center gap-2 px-2 py-1.5">
-                      <EnhancedProviderIcon provider={providerIcon} />
-                      <span className="text-xs font-medium text-muted-foreground">
-                        {providerTitle}
-                      </span>
-                    </div>
-                    {provider.models.map(model => (
-                      <ModelItem
-                        key={model.modelId}
-                        model={model}
-                        onSelect={handleSelect}
-                      />
-                    ))}
-                    {providerIndex < userModelsByProvider.length - 1 && (
-                      <div className="h-px bg-border mx-2 my-1" />
-                    )}
-                  </CommandGroup>
-                );
-              }) || []
+          >
+            {selectedModel?.free && (
+              <Badge
+                variant="secondary"
+                className="mr-2 text-[10px] px-1.5 py-0 h-5 bg-coral-100 text-coral-700 border-coral-200 hover:bg-coral-100 dark:bg-coral-950 dark:text-coral-300 dark:border-coral-800"
+              >
+                Free
+              </Badge>
             )}
-          </CommandList>
-        </Command>
-      </PopoverContent>
-    </Popover>
+            <span className="text-xs font-medium text-muted-foreground group-hover:text-foreground transition-colors truncate">
+              {displayName}
+            </span>
+            <ChevronDown
+              className={cn(
+                "ml-1.5 h-3 w-3 text-muted-foreground group-hover:text-foreground transition-all duration-200 shrink-0",
+                open && "rotate-180"
+              )}
+            />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent
+          className="w-[min(calc(100vw-2rem),380px)] p-0 data-[side=top]:animate-in data-[side=top]:slide-in-from-bottom-4"
+          side="top"
+          sideOffset={4}
+          collisionPadding={16}
+          avoidCollisions={true}
+        >
+          <Command className="pt-2">
+            <CommandInput placeholder="Search models..." className="h-9" />
+            <CommandList className="max-h-[calc(100vh-10rem)] sm:max-h-[350px]">
+              <CommandEmpty>
+                <div className="p-4 text-center">
+                  <Search className="h-8 w-8 text-muted-foreground/50 mx-auto mb-3" />
+                  <p className="text-sm text-muted-foreground mb-1">
+                    No models found
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Try adjusting your search terms
+                  </p>
+                </div>
+              </CommandEmpty>
+
+              {userModelsByProvider?.length === 0 ? (
+                <div className="p-6 text-center">
+                  <p className="text-sm text-muted-foreground mb-2">
+                    No models available
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Add API keys and configure models in Settings
+                  </p>
+                </div>
+              ) : (
+                userModelsByProvider?.map((provider, providerIndex) => {
+                  const providerConfig =
+                    PROVIDER_CONFIG[
+                      provider.id as keyof typeof PROVIDER_CONFIG
+                    ];
+                  const providerTitle = providerConfig?.title || provider.name;
+                  const providerIcon = providerConfig?.icon || provider.id;
+
+                  return (
+                    <CommandGroup key={provider.id}>
+                      <div className="flex items-center gap-2 px-2 py-1.5">
+                        <EnhancedProviderIcon provider={providerIcon} />
+                        <span className="text-xs font-medium text-muted-foreground">
+                          {providerTitle}
+                        </span>
+                      </div>
+                      {provider.models.map(model => (
+                        <ModelItem
+                          key={model.modelId}
+                          model={model}
+                          onSelect={handleSelect}
+                        />
+                      ))}
+                      {providerIndex < userModelsByProvider.length - 1 && (
+                        <div className="h-px bg-border mx-2 my-1" />
+                      )}
+                    </CommandGroup>
+                  );
+                }) || []
+              )}
+            </CommandList>
+          </Command>
+        </PopoverContent>
+      </Popover>
+    </>
   );
 }
 
