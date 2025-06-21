@@ -39,8 +39,8 @@ import {
   getCapabilityColor,
 } from "@/lib/model-capabilities";
 import { useMutation, useQuery } from "convex/react";
+import { useAuthToken } from "@convex-dev/auth/react";
 import { api } from "../../convex/_generated/api";
-import { useUser } from "@/hooks/use-user";
 import { ProviderIcon } from "@/components/provider-icons";
 
 // Provider mapping with titles and icons
@@ -170,20 +170,23 @@ interface ModelPickerProps {
 
 function ModelPickerComponent({ className }: ModelPickerProps) {
   const [open, setOpen] = useState(false);
-  const { isAnonymous } = useUser();
+  const token = useAuthToken();
   const router = useRouter();
 
   const userModelsByProvider = useQuery(api.userModels.getUserModelsByProvider);
   const selectedModel = useQuery(api.userModels.getUserSelectedModel);
   const selectModelMutation = useMutation(api.userModels.selectModel);
 
+  // Check if user is authenticated
+  const isAuthenticated = !!token;
+
   // Simple display name getter
   const displayName = useMemo(() => {
-    if (isAnonymous) {
+    if (!isAuthenticated) {
       return "Gemini 2.5 Flash Lite";
     }
     return selectedModel?.name || "Select model";
-  }, [selectedModel, isAnonymous]);
+  }, [selectedModel, isAuthenticated]);
 
   // Handle model selection
   const handleSelect = useCallback(
@@ -195,7 +198,7 @@ function ModelPickerComponent({ className }: ModelPickerProps) {
   );
 
   // Show loading state
-  if (!userModelsByProvider && !isAnonymous) {
+  if (!userModelsByProvider && isAuthenticated) {
     return (
       <Button
         variant="ghost"
@@ -214,7 +217,7 @@ function ModelPickerComponent({ className }: ModelPickerProps) {
   }
 
   // Anonymous user case - show default model but allow opening for upsell
-  if (isAnonymous) {
+  if (!isAuthenticated) {
     return (
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>

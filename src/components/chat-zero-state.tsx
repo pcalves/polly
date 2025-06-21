@@ -5,99 +5,15 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import Image from "next/image";
 import { PromptsTicker } from "./prompts-ticker";
-import { useQuery, usePreloadedQuery } from "convex/react";
+import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
-import { useUserContext } from "@/providers/user-provider";
 import { useUser } from "@/hooks/use-user";
-import { Preloaded } from "convex/react";
 import { User } from "@/types";
-
-const MESSAGE_LIMIT = 15;
 
 interface ChatZeroStateProps {
   onQuickPrompt: (prompt: string) => void;
 }
 
-// Component for preloaded data with getCurrentUser
-function ChatZeroStateWithPreloadedCurrentUser({
-  onQuickPrompt,
-  preloadedUserModels,
-  preloadedApiKeys,
-  preloadedUser,
-  preloadedMessageCount,
-}: ChatZeroStateProps & {
-  preloadedUserModels: Preloaded<typeof api.userModels.hasUserModels>;
-  preloadedApiKeys: Preloaded<typeof api.apiKeys.hasAnyApiKey>;
-  preloadedUser: Preloaded<typeof api.users.getCurrentUser>;
-  preloadedMessageCount: Preloaded<typeof api.users.getMessageCount>;
-}) {
-  const user = usePreloadedQuery(preloadedUser);
-  const hasEnabledModels = usePreloadedQuery(preloadedUserModels);
-  const hasApiKeys = usePreloadedQuery(preloadedApiKeys);
-  const messageCount = usePreloadedQuery(preloadedMessageCount);
-
-  // Compute user properties using the same logic as usePreloadedUser
-  const isAnonymous = user?.isAnonymous ?? true;
-  const actualMessageCount = messageCount ?? 0;
-  const remainingMessages = Math.max(0, MESSAGE_LIMIT - actualMessageCount);
-  const hasMessageLimit = isAnonymous;
-  const canSendMessage = !isAnonymous || actualMessageCount < MESSAGE_LIMIT;
-
-  const userWithProperties = user
-    ? {
-        ...user,
-        messageCount: actualMessageCount,
-        remainingMessages,
-        isAnonymous,
-        hasMessageLimit,
-        canSendMessage,
-      }
-    : null;
-
-  if (hasApiKeys === undefined) {
-    return (
-      <div className="flex h-full items-center justify-center p-6">
-        <div className="w-5 h-5 border-2 border-muted-foreground/30 border-t-muted-foreground rounded-full animate-spin"></div>
-      </div>
-    );
-  }
-
-  return (
-    <ChatZeroStateContent
-      user={userWithProperties}
-      hasApiKeys={hasApiKeys}
-      hasEnabledModels={hasEnabledModels}
-      onQuickPrompt={onQuickPrompt}
-    />
-  );
-}
-
-// Component for regular queries
-function ChatZeroStateWithQuery({ onQuickPrompt }: ChatZeroStateProps) {
-  const { user, isLoading: userLoading } = useUser();
-
-  const hasEnabledModels = useQuery(api.userModels.hasUserModels, {});
-  const hasApiKeys = useQuery(api.apiKeys.hasAnyApiKey, {});
-
-  if (userLoading || hasApiKeys === undefined) {
-    return (
-      <div className="flex h-full items-center justify-center p-6">
-        <div className="w-5 h-5 border-2 border-muted-foreground/30 border-t-muted-foreground rounded-full animate-spin"></div>
-      </div>
-    );
-  }
-
-  return (
-    <ChatZeroStateContent
-      user={user}
-      hasApiKeys={hasApiKeys}
-      hasEnabledModels={hasEnabledModels}
-      onQuickPrompt={onQuickPrompt}
-    />
-  );
-}
-
-// Shared content component
 function ChatZeroStateContent({
   user,
   hasApiKeys,
@@ -111,7 +27,6 @@ function ChatZeroStateContent({
 }) {
   const isAnonymous = user?.isAnonymous ?? true;
 
-  // Anonymous users: Always show the chat interface
   if (isAnonymous) {
     return (
       <div className="flex h-full items-center justify-center p-6">
@@ -144,8 +59,6 @@ function ChatZeroStateContent({
     );
   }
 
-  // Signed-in users: Show different states based on their setup, but don't block them
-  // If they have API keys and models configured, show normal interface
   if (hasApiKeys && hasEnabledModels) {
     return (
       <div className="flex h-full items-center justify-center p-6">
@@ -178,7 +91,6 @@ function ChatZeroStateContent({
     );
   }
 
-  // If they don't have API keys, encourage them to set up keys but allow chatting
   if (!hasApiKeys) {
     return (
       <div className="flex h-full items-center justify-center p-6">
@@ -282,7 +194,6 @@ function ChatZeroStateContent({
     );
   }
 
-  // Default state - show the normal interface
   return (
     <div className="flex h-full items-center justify-center p-6">
       <div className="max-w-3xl mx-auto w-full">
@@ -315,26 +226,25 @@ function ChatZeroStateContent({
 }
 
 export function ChatZeroState({ onQuickPrompt }: ChatZeroStateProps) {
-  // Get preloaded data from context
-  const userContext = useUserContext();
+  const { user, isLoading: userLoading } = useUser();
 
-  if (
-    userContext.preloadedUserModels &&
-    userContext.preloadedApiKeys &&
-    userContext.preloadedUser &&
-    userContext.preloadedMessageCount
-  ) {
+  const hasEnabledModels = useQuery(api.userModels.hasUserModels, {});
+  const hasApiKeys = useQuery(api.apiKeys.hasAnyApiKey, {});
+
+  if (userLoading || hasApiKeys === undefined) {
     return (
-      <ChatZeroStateWithPreloadedCurrentUser
-        onQuickPrompt={onQuickPrompt}
-        preloadedUserModels={userContext.preloadedUserModels}
-        preloadedApiKeys={userContext.preloadedApiKeys}
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        preloadedUser={userContext.preloadedUser as any}
-        preloadedMessageCount={userContext.preloadedMessageCount}
-      />
+      <div className="flex h-full items-center justify-center p-6">
+        <div className="w-5 h-5 border-2 border-muted-foreground/30 border-t-muted-foreground rounded-full animate-spin"></div>
+      </div>
     );
-  } else {
-    return <ChatZeroStateWithQuery onQuickPrompt={onQuickPrompt} />;
   }
+
+  return (
+    <ChatZeroStateContent
+      user={user}
+      hasApiKeys={hasApiKeys}
+      hasEnabledModels={hasEnabledModels}
+      onQuickPrompt={onQuickPrompt}
+    />
+  );
 }

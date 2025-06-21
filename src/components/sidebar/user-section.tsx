@@ -2,8 +2,9 @@
 
 import { User, LogOut, LogIn } from "lucide-react";
 import { useAuthActions, useAuthToken } from "@convex-dev/auth/react";
-import { useQuery, usePreloadedQuery } from "convex/react";
+import { useQuery } from "convex/react";
 import { useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -12,16 +13,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { api } from "../../../convex/_generated/api";
-import { useUserContext } from "@/providers/user-provider";
-import { Preloaded } from "convex/react";
-import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 
 interface UserSectionContentProps {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  user: any; // Type comes from getCurrentUser or getById queries - can be different shapes
+  user: any;
   token: string | null | undefined;
   authActions: ReturnType<typeof useAuthActions>;
-  router: AppRouterInstance;
+  router: any;
 }
 
 function UserSectionContent({
@@ -30,8 +27,11 @@ function UserSectionContent({
   authActions,
   router,
 }: UserSectionContentProps) {
+  const queryClient = useQueryClient();
+
   const handleSignOut = async () => {
     if (authActions?.signOut) {
+      queryClient.clear();
       await authActions.signOut();
     }
   };
@@ -40,7 +40,6 @@ function UserSectionContent({
     router.push("/auth");
   };
 
-  // Show sign in button if not authenticated
   if (!token || !user) {
     return (
       <div className="p-6 flex-shrink-0">
@@ -56,7 +55,6 @@ function UserSectionContent({
     );
   }
 
-  // Show user dropdown if authenticated
   return (
     <div className="p-6 flex-shrink-0">
       <DropdownMenu>
@@ -71,7 +69,6 @@ function UserSectionContent({
                 alt={user.name || "User avatar"}
                 className="w-6 h-6 rounded-full object-cover"
                 onError={e => {
-                  // Fallback to gradient avatar if image fails to load
                   const target = e.target as HTMLImageElement;
                   target.style.display = "none";
                   const fallback = target.nextElementSibling as HTMLElement;
@@ -85,7 +82,6 @@ function UserSectionContent({
                 <User className="h-3 w-3 text-white" />
               </div>
             )}
-            {/* Fallback avatar (hidden by default when image is present) */}
             {user.image && (
               <div className="w-6 h-6 rounded-full bg-gradient-tropical items-center justify-center hidden">
                 <User className="h-3 w-3 text-white" />
@@ -107,35 +103,12 @@ function UserSectionContent({
   );
 }
 
-function UserSectionWithPreloaded({
-  preloadedUser,
-}: {
-  preloadedUser:
-    | Preloaded<typeof api.users.getCurrentUser>
-    | Preloaded<typeof api.users.getById>;
-}) {
-  const router = useRouter();
-  const token = useAuthToken();
-  const authActions = useAuthActions();
-  const user = usePreloadedQuery(preloadedUser);
-
-  return (
-    <UserSectionContent
-      user={user}
-      token={token}
-      authActions={authActions}
-      router={router}
-    />
-  );
-}
-
-function UserSectionWithQuery() {
+export function UserSection() {
   const router = useRouter();
   const token = useAuthToken();
   const authActions = useAuthActions();
   const user = useQuery(api.users.getCurrentUser);
 
-  // Show loading state only if queries are undefined
   if (token === undefined && user === undefined) {
     return (
       <div className="p-6 flex-shrink-0">
@@ -157,17 +130,4 @@ function UserSectionWithQuery() {
       router={router}
     />
   );
-}
-
-export function UserSection() {
-  const userContext = useUserContext();
-
-  // Use preloaded data if available, otherwise fall back to regular queries
-  if (userContext.preloadedUser) {
-    return (
-      <UserSectionWithPreloaded preloadedUser={userContext.preloadedUser} />
-    );
-  } else {
-    return <UserSectionWithQuery />;
-  }
 }

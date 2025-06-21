@@ -8,6 +8,7 @@ import { api } from "../../../convex/_generated/api";
 import { useRouter } from "next/navigation";
 import { useCreateConversation } from "@/hooks/use-conversations";
 import { useUser } from "@/hooks/use-user";
+import { useTextSelection } from "@/hooks/use-text-selection";
 import {
   Popover,
   PopoverContent,
@@ -38,6 +39,7 @@ export function ConversationStarterPopover({
   const { user } = useUser();
   const { createNewConversationWithResponse } = useCreateConversation();
   const router = useRouter();
+  const { lockSelection, unlockSelection } = useTextSelection();
 
   useEffect(() => {
     async function fetchPrompts() {
@@ -62,6 +64,14 @@ export function ConversationStarterPopover({
 
     fetchPrompts();
   }, [selectedText, generateStarters]);
+
+  useEffect(() => {
+    if (open) {
+      lockSelection();
+    } else {
+      unlockSelection();
+    }
+  }, [open, lockSelection, unlockSelection]);
 
   const handleStartConversation = async (prompt: string) => {
     if (!user) return;
@@ -92,13 +102,16 @@ export function ConversationStarterPopover({
 
   return (
     <Popover open={open} onOpenChange={onOpenChange}>
-      <PopoverTrigger asChild>{children}</PopoverTrigger>
+      <PopoverTrigger asChild data-conversation-starter="true">
+        {children}
+      </PopoverTrigger>
       <PopoverContent
         className={cn("w-[380px] p-0 max-h-[300px]", className)}
         side="bottom"
         align="center"
         sideOffset={8}
         collisionPadding={10}
+        data-conversation-starter="true"
       >
         <div className="bg-background border-0 rounded-xl overflow-hidden">
           {isLoading ? (

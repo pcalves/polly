@@ -1,7 +1,36 @@
 import { v } from "convex/values";
-import { action, mutation } from "./_generated/server";
+import { action, mutation, query } from "./_generated/server";
 import { api } from "./_generated/api";
 import { Id } from "./_generated/dataModel";
+
+// Debug query to check conversation ownership
+export const debugConversationOwnership = query({
+  args: {
+    userId: v.id("users"),
+  },
+  handler: async (ctx, args) => {
+    const conversations = await ctx.db
+      .query("conversations")
+      .withIndex("by_user", q => q.eq("userId", args.userId))
+      .collect();
+
+    const user = await ctx.db.get(args.userId);
+
+    return {
+      userId: args.userId,
+      userExists: !!user,
+      userIsAnonymous: user?.isAnonymous,
+      userName: user?.name,
+      conversationCount: conversations.length,
+      conversations: conversations.map(c => ({
+        id: c._id,
+        title: c.title,
+        createdAt: c.createdAt,
+        updatedAt: c.updatedAt,
+      })),
+    };
+  },
+});
 
 // Graduate an anonymous user to an authenticated user
 export const graduateAnonymousUser = mutation({
@@ -10,6 +39,10 @@ export const graduateAnonymousUser = mutation({
     authUserId: v.id("users"), // The new authenticated user ID from auth system
   },
   handler: async (ctx, args) => {
+    console.log(
+      `[UserGraduation] Starting graduation: ${args.anonymousUserId} -> ${args.authUserId}`
+    );
+
     // Get the anonymous user
     const anonymousUser = await ctx.db.get(args.anonymousUserId);
     if (!anonymousUser || !anonymousUser.isAnonymous) {
@@ -35,10 +68,17 @@ export const graduateAnonymousUser = mutation({
       .withIndex("by_user", q => q.eq("userId", args.anonymousUserId))
       .collect();
 
+    console.log(
+      `[UserGraduation] Found ${conversations.length} conversations to migrate`
+    );
+
     for (const conversation of conversations) {
       await ctx.db.patch(conversation._id, {
         userId: args.authUserId,
       });
+      console.log(
+        `[UserGraduation] Migrated conversation: ${conversation._id}`
+      );
     }
 
     // Update all user API keys to point to the auth user
@@ -46,6 +86,8 @@ export const graduateAnonymousUser = mutation({
       .query("userApiKeys")
       .withIndex("by_user", q => q.eq("userId", args.anonymousUserId))
       .collect();
+
+    console.log(`[UserGraduation] Found ${apiKeys.length} API keys to migrate`);
 
     for (const apiKey of apiKeys) {
       await ctx.db.patch(apiKey._id, {
@@ -59,6 +101,10 @@ export const graduateAnonymousUser = mutation({
       .withIndex("by_user", q => q.eq("userId", args.anonymousUserId))
       .collect();
 
+    console.log(
+      `[UserGraduation] Found ${userModels.length} user models to migrate`
+    );
+
     for (const userModel of userModels) {
       await ctx.db.patch(userModel._id, {
         userId: args.authUserId,
@@ -70,6 +116,10 @@ export const graduateAnonymousUser = mutation({
       .query("personas")
       .withIndex("by_user", q => q.eq("userId", args.anonymousUserId))
       .collect();
+
+    console.log(
+      `[UserGraduation] Found ${personas.length} personas to migrate`
+    );
 
     for (const persona of personas) {
       await ctx.db.patch(persona._id, {
@@ -83,6 +133,10 @@ export const graduateAnonymousUser = mutation({
       .withIndex("by_user", q => q.eq("userId", args.anonymousUserId))
       .collect();
 
+    console.log(
+      `[UserGraduation] Found ${personaSettings.length} persona settings to migrate`
+    );
+
     for (const setting of personaSettings) {
       await ctx.db.patch(setting._id, {
         userId: args.authUserId,
@@ -94,6 +148,10 @@ export const graduateAnonymousUser = mutation({
       .query("userSettings")
       .withIndex("by_user", q => q.eq("userId", args.anonymousUserId))
       .collect();
+
+    console.log(
+      `[UserGraduation] Found ${userSettings.length} user settings to migrate`
+    );
 
     for (const setting of userSettings) {
       await ctx.db.patch(setting._id, {
@@ -107,6 +165,10 @@ export const graduateAnonymousUser = mutation({
       .withIndex("by_user", q => q.eq("userId", args.anonymousUserId))
       .collect();
 
+    console.log(
+      `[UserGraduation] Found ${sharedConversations.length} shared conversations to migrate`
+    );
+
     for (const sharedConv of sharedConversations) {
       await ctx.db.patch(sharedConv._id, {
         userId: args.authUserId,
@@ -115,6 +177,10 @@ export const graduateAnonymousUser = mutation({
 
     // Delete the anonymous user
     await ctx.db.delete(args.anonymousUserId);
+
+    console.log(
+      `[UserGraduation] Successfully graduated user and deleted anonymous user: ${args.anonymousUserId}`
+    );
 
     return {
       success: true,

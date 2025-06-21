@@ -39,7 +39,10 @@ export function EnhancedQuoteButton({
     onQuote();
   };
 
-  const handleShowConversationStarters = () => {
+  const handleShowConversationStarters = (e?: React.MouseEvent) => {
+    console.log("handleShowConversationStarters called", e?.type);
+    e?.preventDefault();
+    e?.stopPropagation();
     onLockSelection?.();
     setShowConversationStarters(true);
   };
@@ -89,6 +92,7 @@ export function EnhancedQuoteButton({
               <Button
                 size="sm"
                 className="h-8 px-3 bg-gradient-to-br from-accent-purple to-accent-purple hover:from-accent-purple hover:to-accent-purple/90 text-white shadow-lg hover:shadow-xl border-0 transition-all duration-200"
+                onClick={handleShowConversationStarters}
               >
                 <MessageSquarePlus className="h-3.5 w-3.5 mr-1.5" />
                 Explore

@@ -72,10 +72,48 @@ export function useUser(): UseUserReturn {
   const authenticatedUser = useQuery(api.users.getCurrentUser);
 
   // Get anonymous user ID from storage for fallback
-  const [storedAnonymousUserId] = useState<UserId | null>(() => {
-    if (typeof window === "undefined") return null;
-    return getStoredAnonymousUserId();
-  });
+  const [storedAnonymousUserId, setStoredAnonymousUserId] =
+    useState<UserId | null>(() => {
+      if (typeof window === "undefined") return null;
+      return getStoredAnonymousUserId();
+    });
+
+  // Listen for graduation completion event and clear anonymous user state
+  useEffect(() => {
+    const handleGraduationComplete = () => {
+      console.log(
+        "[UseUser] Graduation completed, clearing anonymous user state"
+      );
+      setStoredAnonymousUserId(null);
+    };
+
+    if (typeof window !== "undefined") {
+      window.addEventListener("user-graduated", handleGraduationComplete);
+      return () => {
+        window.removeEventListener("user-graduated", handleGraduationComplete);
+      };
+    }
+  }, []);
+
+  // Clear stored anonymous user ID when authenticated user is detected
+  useEffect(() => {
+    if (
+      authenticatedUser &&
+      !authenticatedUser.isAnonymous &&
+      storedAnonymousUserId
+    ) {
+      console.log(
+        "[UseUser] Authenticated user detected, but keeping anonymous user ID until graduation completes"
+      );
+      // Don't automatically clear - let graduation process handle this
+      // setStoredAnonymousUserId(null);
+      // Also clear from storage
+      // if (typeof window !== "undefined") {
+      //   removeAnonymousUserIdCookie();
+      //   localStorage.removeItem(ANONYMOUS_USER_ID_KEY);
+      // }
+    }
+  }, [authenticatedUser, storedAnonymousUserId]);
 
   // Query anonymous user data if no authenticated user and we have a stored ID
   const anonymousUser = useQuery(

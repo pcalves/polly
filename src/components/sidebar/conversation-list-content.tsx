@@ -104,18 +104,7 @@ export function ConversationListContent({
     );
   }
 
-  // If no conversations and no search, show empty state
-  if ((conversations?.length ?? 0) === 0 && searchQuery.trim().length === 0) {
-    return (
-      <div className="flex items-center justify-center h-32">
-        <div className="text-center space-y-1">
-          <MessageCircle className="h-8 w-8 text-muted-foreground/40 mx-auto mb-2" />
-          <p className="text-sm text-muted-foreground">No conversations yet</p>
-        </div>
-      </div>
-    );
-  }
-
+  // If no conversations and there's a search, show no results found
   if (filteredConversations.length === 0 && searchQuery.trim().length > 0) {
     return (
       <div className="flex items-center justify-center h-32">
@@ -125,6 +114,11 @@ export function ConversationListContent({
         </div>
       </div>
     );
+  }
+
+  // If no conversations and no search, just show empty div (no zero state)
+  if ((conversations?.length ?? 0) === 0 && searchQuery.trim().length === 0) {
+    return <div></div>;
   }
 
   return (

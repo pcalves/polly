@@ -6,7 +6,6 @@ import { ConversationId, UserId, Attachment } from "@/types";
 import { Id } from "../../convex/_generated/dataModel";
 import { storeAnonymousUserId } from "./use-user";
 import { useQueryClient } from "@tanstack/react-query";
-import { clearConversationCache } from "@/lib/conversation-cache";
 
 // Simplified hook using the single new conversation action
 export function useCreateConversation() {
@@ -42,15 +41,12 @@ export function useCreateConversation() {
         storeAnonymousUserId(result.userId);
       }
 
-      // Invalidate conversation cache for both TanStack Query and clear localStorage cache
+      // Invalidate conversation cache for both TanStack Query
       console.log(
         "New conversation created, invalidating caches for user:",
         result.userId
       );
       queryClient.invalidateQueries({ queryKey: ["conversations"] });
-
-      // Clear localStorage cache for the user to force fresh data
-      clearConversationCache(result.userId);
 
       return result.conversationId;
     } catch (error) {

@@ -2,7 +2,6 @@
 
 import { Button } from "@/components/ui/button";
 import { SidebarSearch } from "@/components/sidebar/search";
-import { ConversationList } from "@/components/sidebar/conversation-list";
 import { ConversationListClient } from "@/components/sidebar/conversation-list-client";
 import { UserSection } from "@/components/sidebar/user-section";
 import { ConversationId } from "@/types";
@@ -20,8 +19,6 @@ import {
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useUser } from "@/hooks/use-user";
-import { Preloaded } from "convex/react";
-import { api } from "../../convex/_generated/api";
 
 const SIDEBAR_STORAGE_KEY = "sidebar-visible";
 
@@ -51,10 +48,9 @@ export function saveSidebarVisibility(isVisible: boolean): void {
 
 interface SidebarProps {
   children?: React.ReactNode;
-  preloadedConversations?: Preloaded<typeof api.conversations.list>;
 }
 
-export function Sidebar({ children, preloadedConversations }: SidebarProps) {
+export function Sidebar({ children }: SidebarProps) {
   const { isThinking } = useThinking();
   const [searchQuery, setSearchQuery] = useState("");
   const { theme, setTheme } = useTheme();
@@ -292,18 +288,10 @@ export function Sidebar({ children, preloadedConversations }: SidebarProps) {
           </div>
 
           <div className="flex-1 overflow-y-auto px-2 min-h-0 scrollbar-thin">
-            {preloadedConversations ? (
-              <ConversationList
-                searchQuery={searchQuery}
-                currentConversationId={currentConversationId}
-                preloadedConversations={preloadedConversations}
-              />
-            ) : (
-              <ConversationListClient
-                searchQuery={searchQuery}
-                currentConversationId={currentConversationId}
-              />
-            )}
+            <ConversationListClient
+              searchQuery={searchQuery}
+              currentConversationId={currentConversationId}
+            />
           </div>
 
           <UserSection />

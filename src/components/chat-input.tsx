@@ -1,28 +1,26 @@
 "use client";
 
 import React, {
-  useState,
-  useRef,
-  useEffect,
-  useCallback,
   forwardRef,
+  useCallback,
+  useEffect,
   useImperativeHandle,
+  useRef,
+  useState,
 } from "react";
+import { cn } from "@/lib/utils";
 import { X } from "lucide-react";
+import { ConvexFileDisplay } from "@/components/convex-file-display";
 import { NotificationDialog } from "@/components/ui/notification-dialog";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Attachment } from "@/types";
-import { cn } from "@/lib/utils";
-import { useQuery, usePreloadedQuery } from "convex/react";
+import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
-
-import { ConvexFileDisplay } from "@/components/convex-file-display";
 import { useFileUpload } from "@/hooks/use-file-upload";
 import { AttachmentList } from "@/components/chat-input/attachment-list";
 import { InputControls } from "@/components/chat-input/input-controls";
 import { Id } from "../../convex/_generated/dataModel";
 import { useUser } from "@/hooks/use-user";
-import { useUserContext } from "@/providers/user-provider";
 
 interface ChatInputProps {
   onSendMessage: (
@@ -53,78 +51,12 @@ export interface ChatInputRef {
   setInput: (text: string) => void;
 }
 
-// Split component for preloaded data
-const ChatInputWithPreloadedData = forwardRef<ChatInputRef, ChatInputProps>(
-  (props, ref) => {
-    const userContext = useUserContext();
-
-    // Use preloaded queries - these are safe because we know preloaded data exists
-    const hasEnabledModels = usePreloadedQuery(
-      userContext.preloadedUserModels!
-    );
-    const selectedModel = usePreloadedQuery(
-      userContext.preloadedSelectedModel!
-    );
-    const hasApiKeys = usePreloadedQuery(userContext.preloadedApiKeys!);
-
-    return (
-      <ChatInputCore
-        {...props}
-        ref={ref}
-        hasEnabledModels={hasEnabledModels}
-        selectedModel={selectedModel}
-        hasApiKeys={hasApiKeys}
-      />
-    );
-  }
-);
-
-// Split component for query-based data
-const ChatInputWithQuery = forwardRef<ChatInputRef, ChatInputProps>(
-  (props, ref) => {
-    // Use regular queries for fallback
+export const ChatInput = React.memo(
+  forwardRef<ChatInputRef, ChatInputProps>((props, ref) => {
     const hasEnabledModels = useQuery(api.userModels.hasUserModels, {});
     const selectedModel = useQuery(api.userModels.getUserSelectedModel, {});
     const hasApiKeys = useQuery(api.apiKeys.hasAnyApiKey, {});
 
-    return (
-      <ChatInputCore
-        {...props}
-        ref={ref}
-        hasEnabledModels={hasEnabledModels}
-        selectedModel={selectedModel}
-        hasApiKeys={hasApiKeys}
-      />
-    );
-  }
-);
-
-// Core component that contains all the logic
-interface ChatInputCoreProps extends ChatInputProps {
-  hasEnabledModels: boolean | undefined;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  selectedModel: any; // Type comes from getUserSelectedModel query - can be userModel or default model
-  hasApiKeys: boolean | undefined;
-}
-
-const ChatInputCore = forwardRef<ChatInputRef, ChatInputCoreProps>(
-  (
-    {
-      onSendMessage,
-      onSendAsNewConversation,
-      onInputStart,
-      isLoading = false,
-      isStreaming = false,
-      onStop,
-      placeholder = "Ask me anything...",
-      conversationId,
-      hasExistingMessages = false,
-      hasEnabledModels,
-      selectedModel,
-      hasApiKeys,
-    },
-    ref
-  ) => {
     const [input, setInput] = useState("");
     const [previewFile, setPreviewFile] = useState<Attachment | null>(null);
     const [isLimitWarningDismissed, setIsLimitWarningDismissed] =
@@ -133,11 +65,9 @@ const ChatInputCore = forwardRef<ChatInputRef, ChatInputCoreProps>(
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const inputControlsRef = useRef<{ handleSubmit: () => void } | null>(null);
 
-    // User and message limit info
     const { messageCount, remainingMessages, hasMessageLimit, canSendMessage } =
       useUser();
 
-    // Current model for capabilities checking
     const currentModel = selectedModel
       ? {
           ...selectedModel,
@@ -148,7 +78,6 @@ const ChatInputCore = forwardRef<ChatInputRef, ChatInputCoreProps>(
         }
       : undefined;
 
-    // File upload hook
     const {
       attachments,
       uploadProgress,
@@ -160,10 +89,9 @@ const ChatInputCore = forwardRef<ChatInputRef, ChatInputCoreProps>(
       notificationDialog,
     } = useFileUpload({
       currentModel,
-      conversationId,
+      conversationId: props.conversationId,
     });
 
-    // Clear input function
     const clearInput = useCallback(() => {
       setInput("");
     }, []);
@@ -198,7 +126,6 @@ const ChatInputCore = forwardRef<ChatInputRef, ChatInputCoreProps>(
       [addQuote]
     );
 
-    // Auto-resize textarea
     useEffect(() => {
       if (textareaRef.current) {
         textareaRef.current.style.height = "auto";
@@ -206,10 +133,8 @@ const ChatInputCore = forwardRef<ChatInputRef, ChatInputCoreProps>(
       }
     }, [input]);
 
-    // Determine if user can chat - now only blocked by message limits
     const canChat = canSendMessage;
 
-    // Handle form submission (Enter key)
     const handleFormSubmit = useCallback((e: React.FormEvent) => {
       e.preventDefault();
       if (inputControlsRef.current?.handleSubmit) {
@@ -217,20 +142,16 @@ const ChatInputCore = forwardRef<ChatInputRef, ChatInputCoreProps>(
       }
     }, []);
 
-    // Handle textarea key down for Shift+Enter behavior
     const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
       if (e.key === "Enter" && !e.shiftKey) {
         e.preventDefault();
-        // Manually trigger form submission
         if (inputControlsRef.current?.handleSubmit) {
           inputControlsRef.current.handleSubmit();
         }
       }
-      // Shift+Enter will naturally add a new line due to textarea behavior
     }, []);
 
-    // Determine placeholder text
-    let placeholderText = placeholder;
+    let placeholderText = props.placeholder || "Ask me anything...";
     if (!canSendMessage && hasMessageLimit) {
       placeholderText =
         "Message limit reached. Sign in to continue chatting...";
@@ -245,7 +166,6 @@ const ChatInputCore = forwardRef<ChatInputRef, ChatInputCoreProps>(
       !isLimitWarningDismissed;
     const showLimitReached = hasMessageLimit && !canSendMessage;
 
-    // Reset dismissed state when messageCount changes (new message sent)
     const prevMessageCountRef = useRef(messageCount);
     useEffect(() => {
       if (messageCount !== prevMessageCountRef.current) {
@@ -257,7 +177,6 @@ const ChatInputCore = forwardRef<ChatInputRef, ChatInputCoreProps>(
     return (
       <div className="p-6 relative">
         <div className="max-w-3xl mx-auto">
-          {/* Message limit warning banner */}
           {showLimitWarning && !showLimitReached && (
             <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 z-10">
               <div className="inline-flex items-center gap-2 p-2.5 rounded-md bg-amber-50 border border-amber-200 dark:bg-amber-900 dark:border-amber-800 transition-all duration-200 text-xs text-amber-800 dark:text-amber-200 shadow-lg">
@@ -277,7 +196,6 @@ const ChatInputCore = forwardRef<ChatInputRef, ChatInputCoreProps>(
             </div>
           )}
 
-          {/* Message limit reached banner */}
           {showLimitReached && (
             <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 z-10">
               <div className="inline-flex items-center gap-2 p-2.5 rounded-md bg-red-50 border border-red-200 dark:bg-red-900 dark:border-red-800 transition-all duration-200 text-xs text-red-800 dark:text-red-200 shadow-lg">
@@ -314,7 +232,7 @@ const ChatInputCore = forwardRef<ChatInputRef, ChatInputCoreProps>(
                     onChange={e => setInput(e.target.value)}
                     onKeyDown={handleKeyDown}
                     placeholder={placeholderText}
-                    disabled={isLoading || !canChat}
+                    disabled={props.isLoading || !canChat}
                     rows={1}
                     className={cn(
                       "w-full resize-none bg-transparent border-0 outline-none ring-0 focus:ring-0 text-sm leading-relaxed transition-opacity duration-200 min-h-[24px] max-h-[100px] overflow-y-auto",
@@ -332,15 +250,15 @@ const ChatInputCore = forwardRef<ChatInputRef, ChatInputCoreProps>(
               <InputControls
                 ref={inputControlsRef}
                 canChat={canChat}
-                isLoading={isLoading}
-                isStreaming={isStreaming}
+                isLoading={props.isLoading}
+                isStreaming={props.isStreaming}
                 selectedModel={selectedModel}
                 currentModel={currentModel}
-                hasExistingMessages={hasExistingMessages}
-                conversationId={conversationId}
-                onStop={onStop}
-                hasApiKeys={hasApiKeys}
-                hasEnabledModels={hasEnabledModels}
+                hasExistingMessages={props.hasExistingMessages}
+                conversationId={props.conversationId}
+                onStop={props.onStop}
+                hasApiKeys={hasApiKeys ?? false}
+                hasEnabledModels={hasEnabledModels ?? false}
                 input={input}
                 attachments={attachments}
                 buildMessageContent={buildMessageContent}
@@ -348,9 +266,9 @@ const ChatInputCore = forwardRef<ChatInputRef, ChatInputCoreProps>(
                 clearAttachments={clearAttachments}
                 clearInput={clearInput}
                 handleFileUpload={handleFileUpload}
-                onSendMessage={onSendMessage}
-                onSendAsNewConversation={onSendAsNewConversation}
-                onInputStart={onInputStart}
+                onSendMessage={props.onSendMessage}
+                onSendAsNewConversation={props.onSendAsNewConversation}
+                onInputStart={props.onInputStart}
               />
             </div>
           </form>
@@ -366,7 +284,6 @@ const ChatInputCore = forwardRef<ChatInputRef, ChatInputCoreProps>(
           onAction={notificationDialog.handleAction}
         />
 
-        {/* File Preview Dialog */}
         <Dialog
           open={!!previewFile}
           onOpenChange={open => !open && setPreviewFile(null)}
@@ -384,30 +301,5 @@ const ChatInputCore = forwardRef<ChatInputRef, ChatInputCoreProps>(
         </Dialog>
       </div>
     );
-  }
-);
-
-ChatInputWithPreloadedData.displayName = "ChatInputWithPreloadedData";
-ChatInputWithQuery.displayName = "ChatInputWithQuery";
-ChatInputCore.displayName = "ChatInputCore";
-
-// Main exported component that decides which variant to use
-export const ChatInput = React.memo(
-  forwardRef<ChatInputRef, ChatInputProps>((props, ref) => {
-    const userContext = useUserContext();
-
-    // Check if we have all preloaded data available
-    const hasPreloadedData =
-      userContext.preloadedUserModels &&
-      userContext.preloadedSelectedModel &&
-      userContext.preloadedApiKeys;
-
-    if (hasPreloadedData) {
-      return <ChatInputWithPreloadedData {...props} ref={ref} />;
-    }
-
-    return <ChatInputWithQuery {...props} ref={ref} />;
   })
 );
-
-ChatInput.displayName = "ChatInput";
