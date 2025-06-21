@@ -299,9 +299,7 @@ function getAnonymousDefaultModel() {
     supportsImages: true,
     supportsTools: true,
     supportsReasoning: true,
-    inputModalities: undefined,
-    selected: true,
-    createdAt: Date.now(),
+    isPollyProvided: true,
     free: true,
   };
 }

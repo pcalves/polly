@@ -28,25 +28,21 @@ type ApiProvider = "openai" | "anthropic" | "google" | "openrouter";
 const API_KEY_INFO = {
   openai: {
     name: "OpenAI",
-    description: "Creative writing, brainstorming, and general chat.",
     url: "https://platform.openai.com/api-keys",
     placeholder: "sk-...",
   },
   anthropic: {
     name: "Anthropic",
-    description: "Coding, technical docs, and research.",
     url: "https://console.anthropic.com/settings/keys",
     placeholder: "sk-ant-...",
   },
   google: {
     name: "Google",
-    description: "Fast responses and advanced language models.",
     url: "https://makersuite.google.com/app/apikey",
     placeholder: "AI...",
   },
   openrouter: {
     name: "OpenRouter",
-    description: "Try dozens models with one key.",
     url: "https://openrouter.ai/keys",
     placeholder: "sk-or-...",
   },
@@ -199,7 +195,7 @@ export function ApiKeysTab() {
                     <ProviderIcon provider={provider} />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
+                    <div className="flex items-center gap-2">
                       <Label
                         htmlFor={provider}
                         className="text-base font-medium"
@@ -212,9 +208,6 @@ export function ApiKeysTab() {
                         </span>
                       )}
                     </div>
-                    <p className="text-sm text-muted-foreground">
-                      {info.description}
-                    </p>
                   </div>
                 </div>
                 {!isConnected && (

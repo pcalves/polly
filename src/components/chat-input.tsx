@@ -5,6 +5,7 @@ import React, {
   useCallback,
   useEffect,
   useImperativeHandle,
+  useMemo,
   useRef,
   useState,
 } from "react";
@@ -13,7 +14,7 @@ import { X } from "lucide-react";
 import { ConvexFileDisplay } from "@/components/convex-file-display";
 import { NotificationDialog } from "@/components/ui/notification-dialog";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { Attachment } from "@/types";
+import { AIModel, Attachment } from "@/types";
 import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { useFileUpload } from "@/hooks/use-file-upload";
@@ -51,6 +52,48 @@ export interface ChatInputRef {
   setInput: (text: string) => void;
 }
 
+// Constants for shared styles
+const WARNING_BANNER_CLASSES =
+  "absolute -top-8 left-1/2 transform -translate-x-1/2 z-10";
+const WARNING_CONTENT_CLASSES =
+  "inline-flex items-center gap-2 p-2.5 rounded-md transition-all duration-200 text-xs shadow-lg";
+const WARNING_BUTTON_CLASSES = "p-0.5 rounded transition-colors duration-150";
+
+// Warning Banner Component
+const WarningBanner = React.memo<{
+  type: "warning" | "error";
+  onDismiss?: () => void;
+  children: React.ReactNode;
+}>(({ type, onDismiss, children }) => {
+  const isWarning = type === "warning";
+  const colorClasses = isWarning
+    ? "bg-amber-50 border border-amber-200 dark:bg-amber-900 dark:border-amber-800 text-amber-800 dark:text-amber-200"
+    : "bg-red-50 border border-red-200 dark:bg-red-900 dark:border-red-800 text-red-800 dark:text-red-200";
+
+  const buttonHoverClasses = isWarning
+    ? "hover:bg-amber-100/50 dark:hover:bg-amber-800/50"
+    : "hover:bg-red-100/50 dark:hover:bg-red-800/50";
+
+  return (
+    <div className={WARNING_BANNER_CLASSES}>
+      <div className={cn(WARNING_CONTENT_CLASSES, colorClasses)}>
+        <span>{children}</span>
+        {onDismiss && (
+          <button
+            onClick={onDismiss}
+            className={cn(WARNING_BUTTON_CLASSES, buttonHoverClasses)}
+            aria-label="Dismiss"
+          >
+            <X className="h-3.5 w-3.5 hover:opacity-80" />
+          </button>
+        )}
+      </div>
+    </div>
+  );
+});
+
+WarningBanner.displayName = "WarningBanner";
+
 export const ChatInput = React.memo(
   forwardRef<ChatInputRef, ChatInputProps>((props, ref) => {
     const hasEnabledModels = useQuery(api.userModels.hasUserModels, {});
@@ -73,17 +116,20 @@ export const ChatInput = React.memo(
       isAnonymous,
       monthlyUsage,
       hasUserApiKeys,
+      hasUnlimitedCalls,
     } = useUser();
 
-    const currentModel = selectedModel
-      ? {
-          ...selectedModel,
-          contextLength: selectedModel.contextLength,
-          _id: selectedModel._id,
-          _creationTime: selectedModel._creationTime,
-          userId: selectedModel.userId,
-        }
-      : undefined;
+    // Memoize current model to prevent unnecessary re-renders
+    const currentModel = useMemo(() => {
+      if (!selectedModel) return undefined;
+      return {
+        ...selectedModel,
+        contextLength: selectedModel.contextLength,
+        _id: selectedModel._id,
+        _creationTime: selectedModel._creationTime,
+        userId: selectedModel.userId,
+      } as AIModel;
+    }, [selectedModel]);
 
     const {
       attachments,
@@ -99,6 +145,94 @@ export const ChatInput = React.memo(
       conversationId: props.conversationId,
     });
 
+    // Memoize placeholder text calculation
+    const placeholderText = useMemo(() => {
+      if (props.placeholder) return props.placeholder;
+
+      if (!canSendMessage && hasMessageLimit) {
+        if (isAnonymous) {
+          return "Message limit reached. Sign in to continue chatting...";
+        }
+        return hasUserApiKeys
+          ? "Monthly Polly model limit reached. Use BYOK models or wait for reset..."
+          : "Monthly limit reached. Add API keys to use BYOK models...";
+      }
+
+      if (hasApiKeys === undefined || hasEnabledModels === undefined) {
+        return "Loading...";
+      }
+
+      return "Ask me anything...";
+    }, [
+      props.placeholder,
+      canSendMessage,
+      hasMessageLimit,
+      isAnonymous,
+      hasUserApiKeys,
+      hasApiKeys,
+      hasEnabledModels,
+    ]);
+
+    // Memoize warning states
+    const warningStates = useMemo(
+      () => ({
+        showLimitWarning:
+          hasMessageLimit &&
+          messageCount > 0 &&
+          canSendMessage &&
+          !isLimitWarningDismissed &&
+          !hasUnlimitedCalls,
+        showLimitReached:
+          hasMessageLimit && !canSendMessage && !hasUnlimitedCalls,
+      }),
+      [
+        hasMessageLimit,
+        messageCount,
+        canSendMessage,
+        isLimitWarningDismissed,
+        hasUnlimitedCalls,
+      ]
+    );
+
+    // Memoize warning messages
+    const warningMessages = useMemo(() => {
+      const limitWarningMessage = isAnonymous ? (
+        <>
+          {remainingMessages} message{remainingMessages === 1 ? "" : "s"}{" "}
+          remaining • Sign in for unlimited chats
+        </>
+      ) : hasUnlimitedCalls ? (
+        "You have unlimited messages"
+      ) : (
+        <>
+          {monthlyUsage?.remainingMessages || 0} monthly message
+          {monthlyUsage?.remainingMessages === 1 ? "" : "s"} remaining •
+          {hasUserApiKeys
+            ? " Use BYOK models for unlimited chats"
+            : " Add API keys for unlimited chats"}
+        </>
+      );
+
+      const limitReachedMessage = isAnonymous ? (
+        "Message limit reached. Sign in to continue chatting without limits."
+      ) : (
+        <>
+          Monthly Polly model limit reached.
+          {hasUserApiKeys
+            ? " Use your BYOK models to continue chatting."
+            : " Add API keys to access BYOK models."}
+        </>
+      );
+
+      return { limitWarningMessage, limitReachedMessage };
+    }, [
+      isAnonymous,
+      remainingMessages,
+      hasUnlimitedCalls,
+      monthlyUsage?.remainingMessages,
+      hasUserApiKeys,
+    ]);
+
     const clearInput = useCallback(() => {
       setInput("");
     }, []);
@@ -106,10 +240,9 @@ export const ChatInput = React.memo(
     const addQuote = useCallback((quote: string) => {
       setInput(prev => {
         const currentValue = prev.trim();
-        if (currentValue) {
-          return `${currentValue}\n\n${quote}\n\n`;
-        }
-        return `${quote}\n\n`;
+        return currentValue
+          ? `${currentValue}\n\n${quote}\n\n`
+          : `${quote}\n\n`;
       });
 
       setTimeout(() => {
@@ -121,12 +254,42 @@ export const ChatInput = React.memo(
       }, 0);
     }, []);
 
+    const handleSubmit = useCallback(() => {
+      if (inputControlsRef.current?.handleSubmit) {
+        inputControlsRef.current.handleSubmit();
+      }
+    }, []);
+
+    const handleFormSubmit = useCallback(
+      (e: React.FormEvent) => {
+        e.preventDefault();
+        handleSubmit();
+      },
+      [handleSubmit]
+    );
+
+    const handleKeyDown = useCallback(
+      (e: React.KeyboardEvent) => {
+        if (e.key === "Enter" && !e.shiftKey) {
+          e.preventDefault();
+          handleSubmit();
+        }
+      },
+      [handleSubmit]
+    );
+
+    const handleDismissWarning = useCallback(() => {
+      setIsLimitWarningDismissed(true);
+    }, []);
+
+    const handlePreviewFileClose = useCallback((open: boolean) => {
+      if (!open) setPreviewFile(null);
+    }, []);
+
     useImperativeHandle(
       ref,
       () => ({
-        focus: () => {
-          textareaRef.current?.focus();
-        },
+        focus: () => textareaRef.current?.focus(),
         addQuote,
         setInput,
       }),
@@ -140,45 +303,6 @@ export const ChatInput = React.memo(
       }
     }, [input]);
 
-    const canChat = canSendMessage;
-
-    const handleFormSubmit = useCallback((e: React.FormEvent) => {
-      e.preventDefault();
-      if (inputControlsRef.current?.handleSubmit) {
-        inputControlsRef.current.handleSubmit();
-      }
-    }, []);
-
-    const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-      if (e.key === "Enter" && !e.shiftKey) {
-        e.preventDefault();
-        if (inputControlsRef.current?.handleSubmit) {
-          inputControlsRef.current.handleSubmit();
-        }
-      }
-    }, []);
-
-    let placeholderText = props.placeholder || "Ask me anything...";
-    if (!canSendMessage && hasMessageLimit) {
-      if (isAnonymous) {
-        placeholderText =
-          "Message limit reached. Sign in to continue chatting...";
-      } else {
-        placeholderText = hasUserApiKeys
-          ? "Monthly Polly model limit reached. Use BYOK models or wait for reset..."
-          : "Monthly limit reached. Add API keys to use BYOK models...";
-      }
-    } else if (hasApiKeys === undefined || hasEnabledModels === undefined) {
-      placeholderText = "Loading...";
-    }
-
-    const showLimitWarning =
-      hasMessageLimit &&
-      messageCount > 0 &&
-      canSendMessage &&
-      !isLimitWarningDismissed;
-    const showLimitReached = hasMessageLimit && !canSendMessage;
-
     const prevMessageCountRef = useRef(messageCount);
     useEffect(() => {
       if (messageCount !== prevMessageCountRef.current) {
@@ -187,75 +311,54 @@ export const ChatInput = React.memo(
       }
     }, [messageCount]);
 
+    // Memoize form classes
+    const formClasses = useMemo(
+      () =>
+        cn(
+          "rounded-xl border p-3 shadow-lg ring-1 transition-all duration-300",
+          canSendMessage
+            ? "border-accent-emerald/30 bg-surface-primary ring-accent-emerald/10 hover:shadow-xl hover:ring-accent-emerald/20"
+            : "border-border/30 bg-muted/50 ring-border/10"
+        ),
+      [canSendMessage]
+    );
+
+    // Memoize textarea classes
+    const textareaClasses = useMemo(
+      () =>
+        cn(
+          "w-full resize-none bg-transparent border-0 outline-none ring-0 focus:ring-0 text-sm leading-relaxed transition-opacity duration-200 min-h-[24px] max-h-[100px] overflow-y-auto",
+          canSendMessage
+            ? "placeholder:text-muted-foreground/60"
+            : "placeholder:text-muted-foreground cursor-not-allowed"
+        ),
+      [canSendMessage]
+    );
+
     return (
       <div className="p-6 relative">
         <div className="max-w-3xl mx-auto">
-          {showLimitWarning && !showLimitReached && (
-            <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 z-10">
-              <div className="inline-flex items-center gap-2 p-2.5 rounded-md bg-amber-50 border border-amber-200 dark:bg-amber-900 dark:border-amber-800 transition-all duration-200 text-xs text-amber-800 dark:text-amber-200 shadow-lg">
-                <span>
-                  {isAnonymous ? (
-                    <>
-                      {remainingMessages} message
-                      {remainingMessages === 1 ? "" : "s"} remaining • Sign in
-                      for unlimited chats
-                    </>
-                  ) : (
-                    <>
-                      {monthlyUsage?.remainingMessages || 0} monthly message
-                      {monthlyUsage?.remainingMessages === 1 ? "" : "s"}{" "}
-                      remaining •
-                      {hasUserApiKeys
-                        ? " Use BYOK models for unlimited chats"
-                        : " Add API keys for unlimited chats"}
-                    </>
-                  )}
-                </span>
-                <button
-                  onClick={() => setIsLimitWarningDismissed(true)}
-                  className="p-0.5 hover:bg-amber-100/50 dark:hover:bg-amber-800/50 rounded transition-colors duration-150"
-                  aria-label="Dismiss"
-                >
-                  <X className="h-3.5 w-3.5 hover:opacity-80" />
-                </button>
-              </div>
-            </div>
-          )}
+          {warningStates.showLimitWarning &&
+            !warningStates.showLimitReached && (
+              <WarningBanner type="warning" onDismiss={handleDismissWarning}>
+                {warningMessages.limitWarningMessage}
+              </WarningBanner>
+            )}
 
-          {showLimitReached && (
-            <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 z-10">
-              <div className="inline-flex items-center gap-2 p-2.5 rounded-md bg-red-50 border border-red-200 dark:bg-red-900 dark:border-red-800 transition-all duration-200 text-xs text-red-800 dark:text-red-200 shadow-lg">
-                <span>
-                  {isAnonymous ? (
-                    "Message limit reached. Sign in to continue chatting without limits."
-                  ) : (
-                    <>
-                      Monthly Polly model limit reached.
-                      {hasUserApiKeys
-                        ? " Use your BYOK models to continue chatting."
-                        : " Add API keys to access BYOK models."}
-                    </>
-                  )}
-                </span>
-              </div>
-            </div>
+          {warningStates.showLimitReached && (
+            <WarningBanner type="error">
+              {warningMessages.limitReachedMessage}
+            </WarningBanner>
           )}
 
           <form onSubmit={handleFormSubmit}>
-            <div
-              className={cn(
-                "rounded-xl border p-3 shadow-lg ring-1 transition-all duration-300",
-                canChat
-                  ? "border-accent-emerald/30 bg-surface-primary ring-accent-emerald/10 hover:shadow-xl hover:ring-accent-emerald/20"
-                  : "border-border/30 bg-muted/50 ring-border/10"
-              )}
-            >
+            <div className={formClasses}>
               <AttachmentList
                 attachments={attachments}
                 uploadProgress={uploadProgress}
                 onRemoveAttachment={removeAttachment}
                 onPreviewFile={setPreviewFile}
-                canChat={canChat}
+                canChat={canSendMessage}
               />
 
               <div className="flex items-end gap-3">
@@ -266,27 +369,20 @@ export const ChatInput = React.memo(
                     onChange={e => setInput(e.target.value)}
                     onKeyDown={handleKeyDown}
                     placeholder={placeholderText}
-                    disabled={props.isLoading || !canChat}
+                    disabled={props.isLoading || !canSendMessage}
                     rows={1}
-                    className={cn(
-                      "w-full resize-none bg-transparent border-0 outline-none ring-0 focus:ring-0 text-sm leading-relaxed transition-opacity duration-200 min-h-[24px] max-h-[100px] overflow-y-auto",
-                      canChat
-                        ? "placeholder:text-muted-foreground/60"
-                        : "placeholder:text-muted-foreground cursor-not-allowed"
-                    )}
-                    style={{
-                      fontFamily: "inherit",
-                    }}
+                    className={textareaClasses}
+                    style={{ fontFamily: "inherit" }}
                   />
                 </div>
               </div>
 
               <InputControls
                 ref={inputControlsRef}
-                canChat={canChat}
+                canChat={canSendMessage}
                 isLoading={props.isLoading ?? false}
                 isStreaming={props.isStreaming ?? false}
-                selectedModel={selectedModel}
+                selectedModel={selectedModel as AIModel | undefined}
                 currentModel={currentModel}
                 hasExistingMessages={props.hasExistingMessages ?? false}
                 conversationId={props.conversationId}
@@ -318,10 +414,7 @@ export const ChatInput = React.memo(
           onAction={notificationDialog.handleAction}
         />
 
-        <Dialog
-          open={!!previewFile}
-          onOpenChange={open => !open && setPreviewFile(null)}
-        >
+        <Dialog open={!!previewFile} onOpenChange={handlePreviewFileClose}>
           <DialogContent className="max-w-4xl max-h-[90vh] p-0">
             <div className="p-6">
               {previewFile && (
@@ -337,3 +430,5 @@ export const ChatInput = React.memo(
     );
   })
 );
+
+ChatInput.displayName = "ChatInput";

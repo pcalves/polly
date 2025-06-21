@@ -74,9 +74,13 @@ export default function SettingsLayout({
 
   const activeTab = getActiveTab(pathname);
 
-  const usagePercentage = monthlyUsage
-    ? (monthlyUsage.monthlyMessagesSent / monthlyUsage.monthlyLimit) * 100
-    : 0;
+  const usagePercentage =
+    monthlyUsage && monthlyUsage.monthlyLimit > 0
+      ? (monthlyUsage.monthlyMessagesSent / monthlyUsage.monthlyLimit) * 100
+      : 0;
+
+  const hasUnlimitedCalls =
+    monthlyUsage?.hasUnlimitedCalls || monthlyUsage?.monthlyLimit === -1;
 
   const formatDate = (timestamp: number) => {
     return new Date(timestamp).toLocaleDateString("en-US", {
@@ -259,8 +263,8 @@ export default function SettingsLayout({
                       </div>
                     </div>
 
-                    {/* Usage bar - always visible */}
-                    {monthlyUsage && (
+                    {/* Usage bar - hidden for unlimited users */}
+                    {monthlyUsage && !hasUnlimitedCalls && (
                       <div className="bg-muted/30 rounded-lg p-3 backdrop-blur-sm border border-border/50">
                         <div className="flex items-center justify-between mb-2">
                           <div className="flex items-center space-x-1.5">
@@ -345,9 +349,9 @@ export default function SettingsLayout({
                 </div>
               </div>
 
-              {/* Mobile usage section - standalone */}
+              {/* Mobile usage section - standalone - hidden for unlimited users */}
               <div className="lg:hidden">
-                {monthlyUsage && (
+                {monthlyUsage && !hasUnlimitedCalls && (
                   <div className="bg-muted/40 rounded-lg p-3 backdrop-blur-sm border border-border/60 shadow-sm">
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center space-x-1.5">

@@ -103,6 +103,18 @@ export const getMonthlyUsage = query({
       return null;
     }
 
+    // Return unlimited usage for users with unlimited calls
+    if (user.hasUnlimitedCalls) {
+      return {
+        monthlyMessagesSent: user.monthlyMessagesSent || 0,
+        monthlyLimit: -1, // -1 indicates unlimited
+        remainingMessages: -1, // -1 indicates unlimited
+        resetDate: null,
+        needsReset: false,
+        hasUnlimitedCalls: true,
+      };
+    }
+
     // Check if we need to reset monthly count
     const now = Date.now();
     const createdAt = user.createdAt || now;
@@ -164,6 +176,7 @@ export const incrementMessageCount = mutation({
   args: {
     userId: v.id("users"),
     modelProvider: v.optional(v.string()),
+    isPollyProvided: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
     const user = await ctx.db.get(args.userId);
@@ -178,33 +191,36 @@ export const incrementMessageCount = mutation({
         messagesSent: currentCount + 1,
       });
     } else {
-      // Authenticated users: increment monthly count and reset if needed
-      const now = Date.now();
-      const createdAt = user.createdAt || now;
-      const lastReset = user.lastMonthlyReset || createdAt;
+      // Authenticated users: only increment monthly count for Polly-provided models
+      // Use explicit flag if provided, otherwise assume Polly-provided for backward compatibility
+      if (args.isPollyProvided !== false) {
+        const now = Date.now();
+        const createdAt = user.createdAt || now;
+        const lastReset = user.lastMonthlyReset || createdAt;
 
-      // Calculate if we need to reset
-      const lastResetDate = new Date(lastReset);
-      const currentDate = new Date(now);
-      const nextResetDate = new Date(lastResetDate);
-      nextResetDate.setMonth(nextResetDate.getMonth() + 1);
+        // Calculate if we need to reset
+        const lastResetDate = new Date(lastReset);
+        const currentDate = new Date(now);
+        const nextResetDate = new Date(lastResetDate);
+        nextResetDate.setMonth(nextResetDate.getMonth() + 1);
 
-      const needsReset = currentDate >= nextResetDate;
+        const needsReset = currentDate >= nextResetDate;
 
-      if (needsReset) {
-        // Reset monthly count
-        await ctx.db.patch(args.userId, {
-          monthlyMessagesSent: 1,
-          lastMonthlyReset: now,
-          monthlyLimit: user.monthlyLimit || MONTHLY_MESSAGE_LIMIT,
-        });
-      } else {
-        // Increment monthly count
-        const currentMonthlyCount = user.monthlyMessagesSent || 0;
-        await ctx.db.patch(args.userId, {
-          monthlyMessagesSent: currentMonthlyCount + 1,
-          monthlyLimit: user.monthlyLimit || MONTHLY_MESSAGE_LIMIT,
-        });
+        if (needsReset) {
+          // Reset monthly count
+          await ctx.db.patch(args.userId, {
+            monthlyMessagesSent: 1,
+            lastMonthlyReset: now,
+            monthlyLimit: user.monthlyLimit || MONTHLY_MESSAGE_LIMIT,
+          });
+        } else {
+          // Increment monthly count
+          const currentMonthlyCount = user.monthlyMessagesSent || 0;
+          await ctx.db.patch(args.userId, {
+            monthlyMessagesSent: currentMonthlyCount + 1,
+            monthlyLimit: user.monthlyLimit || MONTHLY_MESSAGE_LIMIT,
+          });
+        }
       }
     }
   },
@@ -214,11 +230,16 @@ export const enforceMessageLimit = mutation({
   args: {
     userId: v.id("users"),
     modelProvider: v.optional(v.string()),
+    isPollyProvided: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
     const user = await ctx.db.get(args.userId);
     if (!user) {
       throw new Error("User not found");
+    }
+
+    if (user.hasUnlimitedCalls) {
+      return;
     }
 
     if (user.isAnonymous) {
@@ -230,54 +251,37 @@ export const enforceMessageLimit = mutation({
         );
       }
     } else {
-      // Authenticated users: check monthly limit and API keys
-      const now = Date.now();
-      const createdAt = user.createdAt || now;
-      const lastReset = user.lastMonthlyReset || createdAt;
+      // Authenticated users: only enforce limits for Polly-provided models
+      // Use explicit flag if provided, otherwise assume Polly-provided for backward compatibility
 
-      // Calculate if we need to reset
-      const lastResetDate = new Date(lastReset);
-      const currentDate = new Date(now);
-      const nextResetDate = new Date(lastResetDate);
-      nextResetDate.setMonth(nextResetDate.getMonth() + 1);
+      // Only enforce limits for Polly-provided model messages
+      if (args.isPollyProvided !== false) {
+        const now = Date.now();
+        const createdAt = user.createdAt || now;
+        const lastReset = user.lastMonthlyReset || createdAt;
 
-      const needsReset = currentDate >= nextResetDate;
-      const monthlyLimit = user.monthlyLimit || MONTHLY_MESSAGE_LIMIT;
-      let monthlyMessagesSent = user.monthlyMessagesSent || 0;
+        // Calculate if we need to reset
+        const lastResetDate = new Date(lastReset);
+        const currentDate = new Date(now);
+        const nextResetDate = new Date(lastResetDate);
+        nextResetDate.setMonth(nextResetDate.getMonth() + 1);
 
-      if (needsReset) {
-        monthlyMessagesSent = 0;
-      }
+        const needsReset = currentDate >= nextResetDate;
+        const monthlyLimit = user.monthlyLimit || MONTHLY_MESSAGE_LIMIT;
+        let monthlyMessagesSent = user.monthlyMessagesSent || 0;
 
-      // Check if they've hit the monthly limit
-      if (monthlyMessagesSent >= monthlyLimit) {
-        // Check if they have BYOK models available
-        const apiKeys = await ctx.db
-          .query("userApiKeys")
-          .withIndex("by_user", q => q.eq("userId", user._id))
-          .filter(q => q.eq(q.field("isValid"), true))
-          .collect();
-
-        if (apiKeys.length === 0) {
-          throw new Error(
-            `Monthly message limit reached (${monthlyLimit} messages). Add your own API keys to continue using BYOK models.`
-          );
+        if (needsReset) {
+          monthlyMessagesSent = 0;
         }
 
-        // They have API keys - check if they're trying to use a Polly model
-        const isPollyModel =
-          !args.modelProvider ||
-          args.modelProvider === "polly" ||
-          args.modelProvider === "google"; // Polly uses Google behind the scenes
-
-        if (isPollyModel) {
+        // Check if they've hit the monthly limit for Polly models
+        if (monthlyMessagesSent >= monthlyLimit) {
           throw new Error(
-            `Monthly Polly model limit reached (${monthlyLimit} messages). Please use your BYOK models or wait for next month's reset.`
+            `Monthly Polly model limit reached (${monthlyLimit} messages). Switch to your BYOK models for unlimited usage, or wait for next month's reset.`
           );
         }
-
-        // They're using BYOK models - allow the message
       }
+      // BYOK messages have no limits - always allowed
     }
   },
 });
@@ -356,6 +360,26 @@ export const initializeMonthlyLimits = mutation({
     if (Object.keys(updates).length > 0) {
       await ctx.db.patch(userId, updates);
     }
+  },
+});
+
+// Set unlimited calls flag for a user
+export const setUnlimitedCalls = mutation({
+  args: {
+    userId: v.id("users"),
+    hasUnlimitedCalls: v.boolean(),
+  },
+  handler: async (ctx, args) => {
+    const user = await ctx.db.get(args.userId);
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    await ctx.db.patch(args.userId, {
+      hasUnlimitedCalls: args.hasUnlimitedCalls,
+    });
+
+    return { success: true };
   },
 });
 

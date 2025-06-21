@@ -27,10 +27,11 @@ interface UseUserReturn {
     monthlyMessagesSent: number;
     monthlyLimit: number;
     remainingMessages: number;
-    resetDate: number;
+    resetDate: number | null | undefined;
     needsReset: boolean;
   };
   hasUserApiKeys?: boolean;
+  hasUnlimitedCalls?: boolean;
 }
 
 // Helper function to compute user properties consistently
@@ -42,7 +43,7 @@ function computeUserProperties(
         monthlyMessagesSent: number;
         monthlyLimit: number;
         remainingMessages: number;
-        resetDate: number;
+        resetDate: number | null | undefined;
         needsReset: boolean;
       }
     | null
@@ -69,6 +70,7 @@ function computeUserProperties(
       hasMessageLimit,
       canSendMessage,
       isLoading,
+      hasUnlimitedCalls: false, // Anonymous users never have unlimited calls
     };
   } else {
     // Authenticated users: use monthly limits
@@ -76,18 +78,23 @@ function computeUserProperties(
     const monthlyLimit = monthlyUsage?.monthlyLimit ?? 100;
     const monthlyRemaining = Math.max(0, monthlyLimit - monthlyMessagesSent);
 
-    // Can send message if under monthly limit OR has BYOK models available
-    const canSendMessage = monthlyRemaining > 0 || (hasUserApiKeys ?? false);
+    // Can send message if has unlimited calls OR under monthly limit OR has BYOK models available
+    const canSendMessage = !!(
+      user?.hasUnlimitedCalls ||
+      monthlyRemaining > 0 ||
+      hasUserApiKeys
+    );
 
     return {
       messageCount: 0, // Not relevant for authenticated users
-      remainingMessages: monthlyRemaining,
+      remainingMessages: user?.hasUnlimitedCalls ? -1 : monthlyRemaining, // -1 indicates unlimited
       isAnonymous,
-      hasMessageLimit: true, // Authenticated users have monthly limits
+      hasMessageLimit: !user?.hasUnlimitedCalls,
       canSendMessage,
       isLoading,
       monthlyUsage: monthlyUsage || undefined,
       hasUserApiKeys,
+      hasUnlimitedCalls: user?.hasUnlimitedCalls || false,
     };
   }
 }
