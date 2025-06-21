@@ -13,12 +13,27 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { api } from "../../../convex/_generated/api";
+import Image from "next/image";
 
 interface UserSectionContentProps {
-  user: any;
+  user:
+    | {
+        _id: string;
+        _creationTime: number;
+        name?: string;
+        email?: string;
+        emailVerified?: number;
+        emailVerificationTime?: number;
+        image?: string;
+        isAnonymous?: boolean;
+        messagesSent?: number;
+        createdAt?: number;
+      }
+    | null
+    | undefined;
   token: string | null | undefined;
   authActions: ReturnType<typeof useAuthActions>;
-  router: any;
+  router: ReturnType<typeof useRouter>;
 }
 
 function UserSectionContent({
@@ -64,10 +79,13 @@ function UserSectionContent({
             className="w-full justify-start gap-3 text-sm text-muted-foreground hover:text-foreground"
           >
             {user.image ? (
-              <img
+              <Image
                 src={user.image}
                 alt={user.name || "User avatar"}
+                width={24}
+                height={24}
                 className="w-6 h-6 rounded-full object-cover"
+                unoptimized
                 onError={e => {
                   const target = e.target as HTMLImageElement;
                   target.style.display = "none";

@@ -132,10 +132,13 @@ export function ConvexImageThumbnail({
         title={attachment.name}
         onClick={onClick}
       >
-        <img
+        <Image
           src={thumbnailUrl}
           alt={attachment.name}
+          width={24}
+          height={24}
           className="w-full h-full object-cover"
+          unoptimized
         />
       </div>
     );

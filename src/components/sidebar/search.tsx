@@ -33,6 +33,11 @@ export function SidebarSearch({ searchQuery, onSearchChange }: SearchProps) {
     searchQuery
   );
 
+  const clearSearch = () => {
+    onSearchChange("");
+    setIsSearchFocused(false);
+  };
+
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -52,12 +57,7 @@ export function SidebarSearch({ searchQuery, onSearchChange }: SearchProps) {
 
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, []);
-
-  const clearSearch = () => {
-    onSearchChange("");
-    setIsSearchFocused(false);
-  };
+  }, [clearSearch]);
 
   const handleSearchFocus = () => {
     setIsSearchFocused(true);

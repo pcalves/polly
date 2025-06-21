@@ -78,7 +78,7 @@ export function ParrotLogo({
     window.addEventListener("parrot-logo-change", handleMessageSent);
     return () =>
       window.removeEventListener("parrot-logo-change", handleMessageSent);
-  }, [companionEmoji]);
+  }, [changeCompanionEmoji]);
 
   const sizeClasses = useMemo(() => {
     const sizes = {

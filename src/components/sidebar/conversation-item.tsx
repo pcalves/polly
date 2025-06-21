@@ -15,7 +15,7 @@ import { ConversationId, Conversation } from "@/types";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useConfirmationDialog } from "@/hooks/use-confirmation-dialog";
 import { conversationErrorHandlers } from "@/hooks/use-conversations";
-import { useRouter } from "next/navigation";
+
 import Link from "next/link";
 import { api } from "../../../convex/_generated/api";
 import { useMutation } from "convex/react";
@@ -36,7 +36,6 @@ export function ConversationItem({
   const editInputRef = useRef<HTMLInputElement>(null);
   const confirmationDialog = useConfirmationDialog();
   const deleteConversation = useMutation(api.conversations.remove);
-  const router = useRouter();
   const updateConversationTitle = useMutation(api.conversations.update);
 
   useEffect(() => {
@@ -138,7 +137,6 @@ export function ConversationItem({
       conversation._id,
       deleteConversation,
       currentConversationId,
-      router,
     ]
   );
 

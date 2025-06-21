@@ -250,11 +250,11 @@ export const ChatInput = React.memo(
               <InputControls
                 ref={inputControlsRef}
                 canChat={canChat}
-                isLoading={props.isLoading}
-                isStreaming={props.isStreaming}
+                isLoading={props.isLoading ?? false}
+                isStreaming={props.isStreaming ?? false}
                 selectedModel={selectedModel}
                 currentModel={currentModel}
-                hasExistingMessages={props.hasExistingMessages}
+                hasExistingMessages={props.hasExistingMessages ?? false}
                 conversationId={props.conversationId}
                 onStop={props.onStop}
                 hasApiKeys={hasApiKeys ?? false}
