@@ -43,6 +43,7 @@
     "@tanstack/react-query-next-experimental": "^5.80.7",
     "@tanstack/react-virtual": "^3.13.10",
     "@types/uuid": "^10.0.0",
+    "@vercel/analytics": "^1.5.0",
     "ai": "^4.3.16",
     "autoprefixer": "^10.4.21",
     "class-variance-authority": "^0.7.1",

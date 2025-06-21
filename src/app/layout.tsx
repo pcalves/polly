@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Analytics } from "@vercel/analytics/react";
 import { Inter, Geist_Mono } from "next/font/google";
 import { cookies } from "next/headers";
 import { ThemeProvider } from "@/providers/theme-provider";
@@ -135,7 +136,10 @@ export default async function RootLayout({
               <QueryProvider>
                 <TooltipProvider>
                   <ThinkingProvider>
-                    <AppProvider>{children}</AppProvider>
+                    <AppProvider>
+                      {children}
+                      <Analytics />
+                    </AppProvider>
                     <Toaster />
                   </ThinkingProvider>
                 </TooltipProvider>
