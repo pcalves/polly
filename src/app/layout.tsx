@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter, Geist_Mono } from "next/font/google";
+import { cookies } from "next/headers";
 import { ThemeProvider } from "@/providers/theme-provider";
 import { ConvexClientProvider } from "@/providers/convex-provider";
 import { ThinkingProvider } from "@/providers/thinking-provider";
@@ -7,6 +8,7 @@ import { QueryProvider } from "@/providers/query-provider";
 import { AppProvider } from "@/providers/app-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { THEME_COOKIE_NAME } from "@/lib/theme-utils";
 import "katex/dist/katex.min.css";
 import "./globals.css";
 
@@ -35,13 +37,26 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+async function getServerSideTheme() {
+  const cookieStore = await cookies();
+  const themeCookie = cookieStore.get(THEME_COOKIE_NAME)?.value;
+
+  if (themeCookie === "dark" || themeCookie === "light") {
+    return themeCookie;
+  }
+
+  return "light";
+}
+
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const serverTheme = await getServerSideTheme();
+
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" className={serverTheme} suppressHydrationWarning>
       <head>
         <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
         <link
@@ -58,12 +73,7 @@ export default function RootLayout({
       <body
         className={`${inter.variable} ${geistMono.variable} antialiased relative font-sans`}
       >
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="light"
-          enableSystem
-          disableTransitionOnChange
-        >
+        <ThemeProvider serverTheme={serverTheme}>
           <ConvexClientProvider>
             <QueryProvider>
               <TooltipProvider>

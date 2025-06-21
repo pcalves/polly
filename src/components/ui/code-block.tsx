@@ -10,7 +10,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { useTheme } from "next-themes";
+import { useTheme } from "@/hooks/use-theme";
 import { lightSyntaxTheme, darkSyntaxTheme } from "@/lib/syntax-themes";
 
 interface CodeBlockProps {

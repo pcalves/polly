@@ -1,16 +1,25 @@
 "use client";
 
 import * as React from "react";
-import { ThemeProvider as NextThemesProvider } from "next-themes";
 
-interface Props {
+interface ThemeProviderProps {
   children: React.ReactNode;
-  attribute?: "class" | "data-theme";
-  defaultTheme?: string;
-  enableSystem?: boolean;
-  disableTransitionOnChange?: boolean;
+  serverTheme?: "light" | "dark";
 }
 
-export function ThemeProvider(props: Props) {
-  return <NextThemesProvider {...props} />;
+const ServerThemeContext = React.createContext<"light" | "dark">("light");
+
+export function useServerTheme() {
+  return React.useContext(ServerThemeContext);
+}
+
+export function ThemeProvider({
+  children,
+  serverTheme = "light",
+}: ThemeProviderProps) {
+  return (
+    <ServerThemeContext.Provider value={serverTheme}>
+      {children}
+    </ServerThemeContext.Provider>
+  );
 }
