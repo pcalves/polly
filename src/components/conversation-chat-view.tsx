@@ -11,45 +11,68 @@ import { ChatMessage } from "./chat-message";
 import { ChatInput, ChatInputRef } from "./chat-input";
 import { ChatOutline } from "./chat-outline";
 import { ChatHeader } from "./chat-header";
-import { useChat } from "@/hooks/use-chat";
 import { useScrollDirection } from "@/hooks/use-scroll-direction";
-import { useParams } from "next/navigation";
-import { Attachment, ConversationId } from "@/types";
+import {
+  ConversationId,
+  Attachment,
+  ChatMessage as ChatMessageType,
+} from "@/types";
 import { cn } from "@/lib/utils";
-import { ChatZeroState } from "@/components/chat-zero-state";
-import { useQuery } from "convex/react";
-import { api } from "../../convex/_generated/api";
-import { useRouter } from "next/navigation";
+import { ChatZeroState } from "./chat-zero-state";
 import { useTextSelection } from "@/hooks/use-text-selection";
-import { EnhancedQuoteButton } from "@/components/ui/enhanced-quote-button";
-import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
+import { EnhancedQuoteButton } from "./ui/enhanced-quote-button";
+import { ConfirmationDialog } from "./ui/confirmation-dialog";
 import { useConfirmationDialog } from "@/hooks/use-confirmation-dialog";
-import { ContextMessage } from "@/components/context-message";
-import { useUser } from "@/hooks/use-user";
+import { ContextMessage } from "./context-message";
 import { Id, Doc } from "../../convex/_generated/dataModel";
 
-interface ChatContainerProps {
-  conversationId?: ConversationId;
-  conversation?: Doc<"conversations">;
-  className?: string;
-  hideInputWhenNoApiKeys?: boolean;
+interface ConversationChatViewProps {
+  conversationId: ConversationId;
+  conversation: Doc<"conversations">;
+  messages: ChatMessageType[];
+  isLoading: boolean;
+  isLoadingMessages?: boolean;
+  isStreaming: boolean;
+  hasApiKeys: boolean;
+  onSendMessage: (
+    content: string,
+    attachments?: Attachment[],
+    useWebSearch?: boolean,
+    personaId?: Id<"personas"> | null
+  ) => void;
+  onSendAsNewConversation: (
+    content: string,
+    navigate: boolean,
+    attachments?: Attachment[],
+    contextSummary?: string,
+    personaId?: Id<"personas"> | null
+  ) => Promise<void>;
+  onEditMessage?: (messageId: string, content: string) => void;
+  onRetryUserMessage?: (messageId: string) => void;
+  onRetryAssistantMessage?: (messageId: string) => void;
+  onDeleteMessage: (messageId: string) => Promise<void>;
+  onStopGeneration: () => void;
 }
 
-function ChatContainerComponent({
+export function ConversationChatView({
   conversationId,
-  conversation: providedConversation,
-  className,
-  hideInputWhenNoApiKeys = false,
-}: ChatContainerProps) {
-  const params = useParams();
-  const currentConversationId =
-    (params?.conversationId as ConversationId) || conversationId;
-
+  messages,
+  isLoading,
+  isLoadingMessages,
+  isStreaming,
+  hasApiKeys,
+  onSendMessage,
+  onSendAsNewConversation,
+  onEditMessage,
+  onRetryUserMessage,
+  onRetryAssistantMessage,
+  onDeleteMessage,
+  onStopGeneration,
+}: ConversationChatViewProps) {
+  // UI state and refs
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const chatInputRef = useRef<ChatInputRef>(null);
-  const hasApiKeys = useQuery(api.apiKeys.hasAnyApiKey);
-  const router = useRouter();
   const { selection, addQuoteToInput, lockSelection, unlockSelection } =
     useTextSelection();
   const confirmationDialog = useConfirmationDialog();
@@ -60,49 +83,6 @@ function ChatContainerComponent({
 
   const [isScrolling, setIsScrolling] = useState(false);
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-  const userInfo = useUser();
-
-  const queriedConversation = useQuery(
-    api.conversations.getAuthorized,
-    conversationId && !providedConversation
-      ? { id: conversationId, userId: userInfo.user?._id }
-      : "skip"
-  );
-  const conversation = providedConversation || queriedConversation;
-
-  const personas = useQuery(
-    api.personas.list,
-    userInfo.user?._id ? { userId: userInfo.user._id } : "skip"
-  );
-
-  const onMessagesChange = useCallback(() => {}, []);
-  const onError = useCallback(() => {}, []);
-  const onConversationCreate = useCallback(
-    (newConversationId: ConversationId) => {
-      router.push(`/chat/${newConversationId}`);
-    },
-    [router]
-  );
-
-  const {
-    messages,
-    isLoading,
-    isLoadingMessages,
-    sendMessage,
-    sendMessageToNewConversation,
-    editMessage,
-    retryUserMessage,
-    retryAssistantMessage,
-    stopGeneration,
-    isStreaming,
-    deleteMessage,
-  } = useChat({
-    conversationId,
-    onMessagesChange,
-    onError,
-    onConversationCreate,
-  });
 
   const smoothScrollToMessage = useCallback(
     (
@@ -244,28 +224,13 @@ function ChatContainerComponent({
         return;
       }
 
-      const effectivePersonaId = conversationId
-        ? conversation?.personaId || null
-        : personaId;
-
-      const persona = effectivePersonaId
-        ? personas?.find(p => p._id === effectivePersonaId)
-        : null;
-      const personaPrompt = persona?.prompt || null;
-
-      sendMessage(
-        content,
-        attachments,
-        useWebSearch,
-        personaPrompt,
-        effectivePersonaId
-      );
+      onSendMessage(content, attachments, useWebSearch, personaId);
 
       setTimeout(() => {
         chatInputRef.current?.focus();
       }, 0);
     },
-    [sendMessage, hasApiKeys, personas, conversationId, conversation?.personaId]
+    [onSendMessage, hasApiKeys]
   );
 
   const handleSendAsNewConversation = useCallback(
@@ -280,18 +245,11 @@ function ChatContainerComponent({
         return;
       }
 
-      const persona = personaId
-        ? personas?.find(p => p._id === personaId)
-        : null;
-      const personaPrompt = persona?.prompt || null;
-
-      await sendMessageToNewConversation(
+      await onSendAsNewConversation(
         content,
-        attachments,
         navigate,
+        attachments,
         contextSummary,
-        conversationId,
-        personaPrompt,
         personaId
       );
 
@@ -299,7 +257,7 @@ function ChatContainerComponent({
         chatInputRef.current?.focus();
       }, 0);
     },
-    [sendMessageToNewConversation, hasApiKeys, conversationId, personas]
+    [onSendAsNewConversation, hasApiKeys]
   );
 
   const handleAddQuote = useCallback((quote: string) => {
@@ -349,11 +307,11 @@ function ChatContainerComponent({
           variant: "destructive",
         },
         async () => {
-          await deleteMessage(messageId);
+          await onDeleteMessage(messageId);
         }
       );
     },
-    [messages, confirmationDialog, deleteMessage]
+    [messages, confirmationDialog, onDeleteMessage]
   );
 
   const isEmpty = messages.length === 0;
@@ -365,17 +323,11 @@ function ChatContainerComponent({
     }
 
     const lastMessage = messages[messages.length - 1];
-
-    return (
-      lastMessage?.role === "user" ||
-      (lastMessage?.role === "assistant" &&
-        !lastMessage.content &&
-        !lastMessage.reasoning)
-    );
+    return !lastMessage.content && !lastMessage.reasoning;
   }, [isLoading, messages]);
 
   return (
-    <div className={cn("flex h-full", className)}>
+    <div className="flex h-full">
       <div className="flex-1 flex flex-col relative h-full overflow-hidden">
         <div className="flex-1 overflow-hidden">
           <div className="h-full flex flex-col relative overflow-hidden">
@@ -400,7 +352,7 @@ function ChatContainerComponent({
                       )}
                     >
                       <div className="h-16 flex items-center">
-                        <ChatHeader conversationId={currentConversationId} />
+                        <ChatHeader conversationId={conversationId} />
                       </div>
                     </div>
 
@@ -439,14 +391,14 @@ function ChatContainerComponent({
                                     message={message}
                                     isStreaming={isMessageStreaming}
                                     onEditMessage={
-                                      message.role === "user"
-                                        ? editMessage
+                                      message.role === "user" && onEditMessage
+                                        ? onEditMessage
                                         : undefined
                                     }
                                     onRetryMessage={
                                       message.role === "user"
-                                        ? retryUserMessage
-                                        : retryAssistantMessage
+                                        ? onRetryUserMessage
+                                        : onRetryAssistantMessage
                                     }
                                     onDeleteMessage={handleDeleteMessage}
                                   />
@@ -474,19 +426,17 @@ function ChatContainerComponent({
                 )}
               </div>
 
-              {(!hideInputWhenNoApiKeys || hasApiKeys) && (
+              {hasApiKeys && (
                 <div className="flex-shrink-0 relative">
                   <ChatInput
                     ref={chatInputRef}
                     onSendMessage={handleSendMessage}
-                    onSendAsNewConversation={
-                      conversationId ? handleSendAsNewConversation : undefined
-                    }
+                    onSendAsNewConversation={handleSendAsNewConversation}
                     conversationId={conversationId}
                     hasExistingMessages={messages.length > 0}
                     isLoading={isLoading}
                     isStreaming={isStreaming}
-                    onStop={stopGeneration}
+                    onStop={onStopGeneration}
                     placeholder="Ask me anything..."
                   />
                 </div>
@@ -524,5 +474,3 @@ function ChatContainerComponent({
     </div>
   );
 }
-
-export const ChatContainer = React.memo(ChatContainerComponent);
