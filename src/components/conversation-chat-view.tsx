@@ -304,11 +304,16 @@ export function ConversationChatView({
                 ) : isEmpty ? (
                   <ChatZeroState />
                 ) : (
-                  <div className={cn("space-y-4", dynamicBottomSpacing)}>
+                  <div
+                    className={cn(
+                      "space-y-1 sm:space-y-2",
+                      dynamicBottomSpacing
+                    )}
+                  >
                     <div
                       className={cn(
                         "sticky top-0 z-20 bg-background/95 backdrop-blur-md border-b border-border/30 transition-transform duration-300 ease-out pl-16 pr-4 lg:pr-6",
-                        scrollState.shouldHideHeader && "-translate-y-full"
+                        scrollState.shouldHideHeader && "sm:-translate-y-full"
                       )}
                     >
                       <div className="h-16 flex items-center">
@@ -316,8 +321,8 @@ export function ConversationChatView({
                       </div>
                     </div>
 
-                    <div className="p-8 space-y-4">
-                      <div className="max-w-3xl mx-auto space-y-4">
+                    <div className="p-4 sm:p-8 space-y-2 sm:space-y-3">
+                      <div className="max-w-3xl mx-auto space-y-2 sm:space-y-3">
                         {messages
                           .filter(message => {
                             if (message.role === "system") {

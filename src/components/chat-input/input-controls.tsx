@@ -159,8 +159,9 @@ export const InputControls = forwardRef<InputControlsRef, InputControlsProps>(
     return (
       <>
         {/* Controls row */}
-        <div className="flex items-center justify-between mt-2 pt-2 border-t border-border/20">
-          <div className="flex items-center gap-2">
+        <div className="flex items-center justify-between mt-2 pt-2 border-t border-border/20 gap-2">
+          {/* Left side controls - single line layout */}
+          <div className="flex items-center gap-1 sm:gap-2 min-w-0 flex-1">
             {/* Persona selector */}
             {canChat && personasEnabled && !conversationId && (
               <PersonaPicker
@@ -168,17 +169,17 @@ export const InputControls = forwardRef<InputControlsRef, InputControlsProps>(
                 selectedPersonaId={selectedPersonaId}
                 onPersonaSelect={setSelectedPersonaId}
                 className={cn(
-                  "flex items-center gap-1.5 px-2.5 py-1.5 rounded-full border transition-all duration-200 hover:shadow-md focus-visible:ring-2 focus-visible:ring-accent-emerald/20 focus-visible:ring-offset-1",
+                  "flex items-center gap-1 px-2 sm:px-3 py-2 sm:py-1.5 rounded-full border-2 border-dashed transition-all duration-200 hover:shadow-md focus-visible:ring-2 focus-visible:ring-accent-coral/20 focus-visible:ring-offset-1 text-xs flex-shrink-0 min-h-11 sm:h-auto min-w-11 sm:min-w-auto",
                   selectedPersonaId
-                    ? "bg-emerald-100 border-emerald-300 hover:bg-emerald-150 active:bg-emerald-200 hover:border-emerald-400 active:border-emerald-500 shadow-emerald-200/30 hover:shadow-emerald-200/50 dark:bg-emerald-900/40 dark:border-emerald-700/60 dark:hover:bg-emerald-800/50 dark:active:bg-emerald-700/60 dark:hover:border-emerald-600/70 dark:active:border-emerald-500/80 dark:shadow-emerald-900/20 dark:hover:shadow-emerald-800/30"
-                    : "bg-muted/40 hover:bg-emerald-50 active:bg-emerald-100 border-border/40 hover:border-emerald-200 active:border-emerald-300 hover:shadow-emerald-100/50 dark:hover:bg-emerald-950/50 dark:active:bg-emerald-900/50 dark:hover:border-emerald-700/50 dark:active:border-emerald-600/50 dark:hover:shadow-emerald-900/20"
+                    ? "bg-accent-coral/10 border-accent-coral/30 hover:bg-accent-coral/15 active:bg-accent-coral/20 hover:border-accent-coral/40 active:border-accent-coral/50 dark:bg-accent-coral/20 dark:border-accent-coral/50"
+                    : "bg-muted/30 border-muted-foreground/20 hover:bg-muted/50 active:bg-muted/70 hover:border-muted-foreground/30 active:border-muted-foreground/40 dark:bg-muted/20 dark:hover:bg-muted/40"
                 )}
               />
             )}
 
-            {/* Model selector */}
+            {/* Model selector - most prominent */}
             {canChat && (
-              <ModelPicker className="flex items-center gap-1.5 px-2.5 py-1.5 bg-muted/40 hover:bg-emerald-50 active:bg-emerald-100 dark:hover:bg-emerald-950/50 dark:active:bg-emerald-900/50 rounded-full border border-border/40 hover:border-emerald-200 active:border-emerald-300 dark:hover:border-emerald-700/50 dark:active:border-emerald-600/50 transition-all duration-200 hover:shadow-md hover:shadow-emerald-100/50 dark:hover:shadow-emerald-900/20 focus-visible:ring-2 focus-visible:ring-accent-emerald/20 focus-visible:ring-offset-1" />
+              <ModelPicker className="flex items-center gap-1 px-2 sm:px-3 py-2 sm:py-1.5 bg-background hover:bg-accent/50 active:bg-accent/80 rounded-lg border border-border hover:border-muted-foreground/30 active:border-muted-foreground/50 transition-all duration-200 hover:shadow-md focus-visible:ring-2 focus-visible:ring-accent-coral/20 focus-visible:ring-offset-1 text-xs min-w-0 max-w-36 sm:max-w-none min-h-11 sm:h-auto font-medium" />
             )}
 
             {/* Web search toggle */}
@@ -190,16 +191,17 @@ export const InputControls = forwardRef<InputControlsRef, InputControlsProps>(
                   enabled={webSearchEnabled}
                   onToggle={setWebSearchEnabled}
                   className={cn(
-                    "flex items-center gap-1.5 px-2.5 py-1.5 rounded-full border transition-all duration-200 hover:shadow-md focus-visible:ring-2 focus-visible:ring-accent-emerald/20 focus-visible:ring-offset-1",
+                    "flex items-center gap-1 px-2 sm:px-3 py-2 sm:py-1.5 rounded-lg border transition-all duration-200 hover:shadow-md focus-visible:ring-2 focus-visible:ring-accent-coral/20 focus-visible:ring-offset-1 text-xs flex-shrink-0 min-h-11 sm:h-auto min-w-11 sm:min-w-auto",
                     webSearchEnabled
-                      ? "bg-emerald-100 border-emerald-300 hover:bg-emerald-150 active:bg-emerald-200 hover:border-emerald-400 active:border-emerald-500 shadow-emerald-200/30 hover:shadow-emerald-200/50 dark:bg-emerald-900/40 dark:border-emerald-700/60 dark:hover:bg-emerald-800/50 dark:active:bg-emerald-700/60 dark:hover:border-emerald-600/70 dark:active:border-emerald-500/80 dark:shadow-emerald-900/20 dark:hover:shadow-emerald-800/30"
-                      : "bg-muted/40 hover:bg-emerald-50 active:bg-emerald-100 border-border/40 hover:border-emerald-200 active:border-emerald-300 hover:shadow-emerald-100/50 dark:hover:bg-emerald-950/50 dark:active:bg-emerald-900/50 dark:hover:border-emerald-700/50 dark:active:border-emerald-600/50 dark:hover:shadow-emerald-900/20"
+                      ? "bg-accent-coral/10 border-accent-coral/30 hover:bg-accent-coral/15 active:bg-accent-coral/20 hover:border-accent-coral/40 active:border-accent-coral/50 dark:bg-accent-coral/20 dark:border-accent-coral/50"
+                      : "bg-muted/30 border-border hover:bg-muted/50 active:bg-muted/70 hover:border-muted-foreground/20 active:border-muted-foreground/30 dark:bg-muted/20 dark:hover:bg-muted/40"
                   )}
                 />
               )}
           </div>
 
-          <div className="flex items-center gap-2">
+          {/* Right side controls */}
+          <div className="flex items-center gap-2 flex-shrink-0">
             {canChat && (
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -209,10 +211,10 @@ export const InputControls = forwardRef<InputControlsRef, InputControlsProps>(
                     size="sm"
                     onClick={() => fileInputRef.current?.click()}
                     disabled={isLoading}
-                    className="flex items-center gap-1.5 px-2.5 py-1.5 bg-muted/40 hover:bg-emerald-50 active:bg-emerald-100 dark:hover:bg-emerald-950/50 dark:active:bg-emerald-900/50 rounded-full border border-border/40 hover:border-emerald-200 active:border-emerald-300 dark:hover:border-emerald-700/50 dark:active:border-emerald-600/50 transition-all duration-200 hover:shadow-md hover:shadow-emerald-100/50 dark:hover:shadow-emerald-900/20 focus-visible:ring-2 focus-visible:ring-accent-emerald/20 focus-visible:ring-offset-1 h-auto disabled:opacity-50 disabled:cursor-not-allowed group"
+                    className="flex items-center gap-1 px-2 sm:px-3 py-2 sm:py-1.5 bg-muted/30 hover:bg-muted/50 active:bg-muted/70 border border-border hover:border-muted-foreground/20 active:border-muted-foreground/30 rounded-full transition-all duration-200 hover:shadow-md dark:bg-muted/20 dark:hover:bg-muted/40 focus-visible:ring-2 focus-visible:ring-accent-coral/20 focus-visible:ring-offset-1 min-h-11 sm:h-auto disabled:opacity-50 disabled:cursor-not-allowed group flex-shrink-0 min-w-11 sm:min-w-auto"
                   >
-                    <Paperclip className="h-3.5 w-3.5 text-muted-foreground group-hover:text-foreground transition-colors" />
-                    <span className="text-xs font-medium text-muted-foreground group-hover:text-foreground transition-colors">
+                    <Paperclip className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors" />
+                    <span className="hidden sm:inline text-xs font-medium text-muted-foreground group-hover:text-foreground transition-colors">
                       Attach
                     </span>
                   </Button>

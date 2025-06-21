@@ -90,7 +90,7 @@ const MessageActions = memo(
     if (isStreaming) return null;
 
     const containerClassName = cn(
-      "flex items-center gap-2 mt-3 opacity-0 group-hover:opacity-100 translate-y-1 group-hover:translate-y-0 transition-all duration-300 ease-out",
+      "flex items-center gap-2 mt-3 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 translate-y-0 sm:translate-y-1 sm:group-hover:translate-y-0 transition-all duration-300 ease-out",
       isUser && isEditing && "opacity-0 pointer-events-none translate-y-2",
       isUser && "justify-end mt-2",
       className
@@ -276,7 +276,7 @@ function ChatMessageComponent({
   return (
     <div
       className={cn(
-        "group w-full px-6 py-4 transition-colors",
+        "group w-full px-3 py-3 sm:px-6 sm:py-4 transition-colors",
         "bg-transparent"
       )}
       data-message-role={message.role}
@@ -286,15 +286,17 @@ function ChatMessageComponent({
           <div
             className={cn(
               "min-w-0 transition-all duration-300 ease-out",
-              isEditing ? "w-[600px]" : "max-w-[90%] sm:max-w-[85%]"
+              isEditing
+                ? "w-[600px]"
+                : "max-w-[95%] sm:max-w-[90%] lg:max-w-[85%]"
             )}
           >
             <div
               className={cn(
                 "w-full transition-all duration-300 ease-out transform",
                 isEditing
-                  ? "rounded-xl border border-accent-emerald/30 bg-background/95 backdrop-blur-sm p-5 shadow-lg ring-1 ring-accent-emerald/10"
-                  : "inline-block rounded-xl px-4 py-3 bg-muted/50 border border-border text-foreground shadow-sm hover:shadow-md hover:border-accent-emerald/30"
+                  ? "rounded-xl border border-accent-coral/30 bg-background/95 backdrop-blur-sm p-4 sm:p-5 shadow-lg ring-1 ring-accent-coral/10"
+                  : "inline-block rounded-xl px-3 py-2.5 sm:px-4 sm:py-3 bg-muted/50 border border-border text-foreground shadow-sm hover:shadow-md hover:border-accent-coral/30"
               )}
             >
               {isEditing ? (
@@ -302,7 +304,7 @@ function ChatMessageComponent({
                   <textarea
                     value={editContent}
                     onChange={e => setEditContent(e.target.value)}
-                    className="w-full resize-none bg-transparent text-foreground border-0 outline-none ring-0 focus:ring-0 text-sm leading-relaxed placeholder:text-muted-foreground/60 transition-opacity duration-200"
+                    className="w-full resize-none bg-transparent text-foreground border-0 outline-none ring-0 focus:ring-0 text-sm sm:text-base leading-relaxed placeholder:text-muted-foreground/60 transition-opacity duration-200"
                     placeholder="Edit your message..."
                     autoFocus
                     style={{
@@ -336,7 +338,7 @@ function ChatMessageComponent({
                   </div>
                 </div>
               ) : (
-                <div className="transition-all duration-300 ease-out whitespace-pre-wrap break-words">
+                <div className="transition-all duration-300 ease-out whitespace-pre-wrap break-words text-sm sm:text-base">
                   {displayContent}
                   {renderAttachments(message.attachments, "user")}
                 </div>
@@ -366,7 +368,7 @@ function ChatMessageComponent({
               </div>
             )}
 
-            <div className="prose prose-sm max-w-none dark:prose-invert">
+            <div className="prose prose-sm sm:prose-base max-w-none dark:prose-invert">
               <EnhancedMarkdown
                 isStreaming={isStreaming}
                 messageId={message.id}

@@ -1,9 +1,10 @@
 "use client";
 
-import { memo, useCallback, useMemo, useState, useEffect } from "react";
+import { memo, useCallback, useMemo, useState } from "react";
 import { ChatMessage as ChatMessageType } from "@/types";
 import { User, Bot } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useSidebar } from "@/hooks/use-sidebar";
 
 interface OutlineItem {
   id: string;
@@ -22,81 +23,13 @@ interface ChatOutlineProps {
   className?: string;
 }
 
-// Same storage key as sidebar component
-const SIDEBAR_STORAGE_KEY = "sidebar-visible";
-
-function loadSidebarVisibility(): boolean {
-  if (typeof window === "undefined") return true;
-
-  try {
-    const stored = localStorage.getItem(SIDEBAR_STORAGE_KEY);
-    return stored !== null ? JSON.parse(stored) : true;
-  } catch (error) {
-    console.warn("Failed to load sidebar visibility from localStorage:", error);
-    return true;
-  }
-}
-
 function ChatOutlineComponent({
   messages,
   onNavigate,
   className,
 }: ChatOutlineProps) {
   const [isExpanded, setIsExpanded] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
-  const [isSidebarVisible, setIsSidebarVisible] = useState(true);
-
-  // Handle responsive behavior
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 1024); // lg breakpoint
-    };
-
-    checkMobile();
-    window.addEventListener("resize", checkMobile);
-    return () => window.removeEventListener("resize", checkMobile);
-  }, []);
-
-  // Listen to sidebar visibility changes
-  useEffect(() => {
-    // Initial load
-    setIsSidebarVisible(loadSidebarVisibility());
-
-    // Listen for storage changes (when sidebar is toggled)
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === SIDEBAR_STORAGE_KEY && e.newValue !== null) {
-        try {
-          setIsSidebarVisible(JSON.parse(e.newValue));
-        } catch (error) {
-          console.warn(
-            "Failed to parse sidebar visibility from storage:",
-            error
-          );
-        }
-      }
-    };
-
-    // Listen for direct localStorage changes in the same tab
-    const handleLocalStorageUpdate = () => {
-      setIsSidebarVisible(loadSidebarVisibility());
-    };
-
-    window.addEventListener("storage", handleStorageChange);
-
-    // Custom event for same-tab localStorage updates
-    window.addEventListener(
-      "sidebar-visibility-changed",
-      handleLocalStorageUpdate
-    );
-
-    return () => {
-      window.removeEventListener("storage", handleStorageChange);
-      window.removeEventListener(
-        "sidebar-visibility-changed",
-        handleLocalStorageUpdate
-      );
-    };
-  }, []);
+  const { isSidebarVisible, isMobile } = useSidebar();
 
   // Function to strip markdown and get preview text
   const stripMarkdownAndPreview = (
@@ -226,21 +159,16 @@ function ChatOutlineComponent({
   const visibleItems = outlineItems.slice(0, 12);
   const collapsedHeight = Math.max(80, visibleItems.length * 8 + 32); // 8px per item + 32px padding
 
-  if (outlineItems.length <= 1) {
+  if (outlineItems.length <= 1 || isMobile) {
     return null;
   }
 
   // Calculate responsive positioning
   const getLeftPosition = () => {
-    if (isMobile) {
-      // On mobile, always position from the left edge since sidebar is overlay
-      return "20px";
-    } else {
-      // On desktop, position based on actual sidebar visibility
-      // 340px = 320px sidebar width + 20px margin when visible
-      // 20px margin when hidden
-      return isSidebarVisible ? "340px" : "20px";
-    }
+    // On desktop, position based on actual sidebar visibility
+    // 340px = 320px sidebar width + 20px margin when visible
+    // 20px margin when hidden
+    return isSidebarVisible ? "340px" : "20px";
   };
 
   return (

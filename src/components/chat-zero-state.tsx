@@ -38,7 +38,7 @@ function SetupChecklist({
   if (!needsSetup || isDismissed) return null;
 
   return (
-    <div className="mt-6 max-w-md mx-auto">
+    <div className="mt-4 sm:mt-6 max-w-sm sm:max-w-md mx-auto">
       <div className="bg-muted/20 rounded-md border border-border/30 p-3 relative">
         <Button
           variant="ghost"
@@ -62,15 +62,19 @@ function SetupChecklist({
               <span
                 className={
                   hasApiKeys
-                    ? "text-muted-foreground line-through"
-                    : "text-muted-foreground"
+                    ? "text-muted-foreground line-through flex-1"
+                    : "text-muted-foreground flex-1"
                 }
               >
                 Add your API keys
               </span>
               {!hasApiKeys && (
                 <Link href="/settings/api-keys">
-                  <Button variant="outline" size="sm">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-xs h-6 px-2"
+                  >
                     Setup
                   </Button>
                 </Link>
@@ -85,15 +89,19 @@ function SetupChecklist({
               <span
                 className={
                   hasEnabledModels
-                    ? "text-muted-foreground line-through"
-                    : "text-muted-foreground"
+                    ? "text-muted-foreground line-through flex-1"
+                    : "text-muted-foreground flex-1"
                 }
               >
                 Enable AI models
               </span>
               {hasApiKeys && !hasEnabledModels && (
                 <Link href="/settings/models">
-                  <Button variant="outline" size="sm">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-xs h-6 px-2"
+                  >
                     Setup
                   </Button>
                 </Link>
@@ -138,20 +146,21 @@ function ChatZeroStateContent({
   };
 
   return (
-    <div className="flex h-full items-center justify-center px-6 pt-6 pb-2">
-      <div className="max-w-3xl mx-auto w-full">
-        <div className="text-center space-y-8 px-6">
-          <div className="space-y-4">
+    <div className="h-full flex flex-col sm:flex sm:h-full sm:items-center sm:justify-center px-2 sm:px-4 pt-4 sm:pt-6 pb-2 w-full max-w-full overflow-hidden">
+      <div className="max-w-3xl mx-auto w-full min-w-0 h-full sm:h-auto flex flex-col sm:block">
+        {/* Mobile: Top section with mascot and heading */}
+        <div className="flex-1 flex flex-col items-center justify-center sm:hidden">
+          <div className="text-center space-y-4">
             <div className="flex justify-center mb-4">
               <div className="relative">
                 <Image
                   src="/polly-mascot.png"
                   alt="Polly AI Mascot"
-                  width={96}
-                  height={96}
-                  className="w-24 h-24 object-contain drop-shadow-lg relative z-10"
+                  width={128}
+                  height={128}
+                  className="w-32 h-32 object-contain drop-shadow-lg relative z-10"
                 />
-                <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/15 via-teal-500/15 to-cyan-500/15 rounded-full blur-lg opacity-50 scale-110"></div>
+                <div className="absolute inset-0 bg-gradient-to-br from-accent-coral/15 via-accent-orange/15 to-accent-yellow/15 rounded-full blur-lg opacity-50 scale-110"></div>
               </div>
             </div>
             <h1 className="text-2xl font-semibold text-foreground tracking-tight">
@@ -164,9 +173,41 @@ function ChatZeroStateContent({
             )}
           </div>
 
+          {isAnonymous && (
+            <div className="mt-6 w-full">
+              <PromptsTicker onQuickPrompt={handleQuickPrompt} />
+            </div>
+          )}
+        </div>
+
+        {/* Desktop: Original centered layout */}
+        <div className="hidden sm:block text-center space-y-6 sm:space-y-8 px-2 sm:px-4 max-w-full">
+          <div className="space-y-3 sm:space-y-4">
+            <div className="flex justify-center mb-3 sm:mb-4">
+              <div className="relative">
+                <Image
+                  src="/polly-mascot.png"
+                  alt="Polly AI Mascot"
+                  width={96}
+                  height={96}
+                  className="w-20 h-20 sm:w-24 sm:h-24 object-contain drop-shadow-lg relative z-10"
+                />
+                <div className="absolute inset-0 bg-gradient-to-br from-accent-coral/15 via-accent-orange/15 to-accent-yellow/15 rounded-full blur-lg opacity-50 scale-110"></div>
+              </div>
+            </div>
+            <h1 className="text-xl sm:text-2xl font-semibold text-foreground tracking-tight">
+              What&apos;s on your mind?
+            </h1>
+            {isAnonymous && (
+              <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
+                Pick a prompt to get started, or ask me anything else!
+              </p>
+            )}
+          </div>
+
           {isAnonymous && <PromptsTicker onQuickPrompt={handleQuickPrompt} />}
 
-          <div className="-mx-6">
+          <div className="-mx-2 sm:-mx-4">
             <ChatInput
               ref={chatInputRef}
               hasExistingMessages={false}
@@ -186,6 +227,30 @@ function ChatZeroStateContent({
                 hasEnabledModels={!!hasEnabledModels}
               />
             )}
+        </div>
+
+        {/* Mobile: Bottom section with checklist and chat input */}
+        <div className="flex-shrink-0 sm:hidden space-y-4">
+          {!isAnonymous &&
+            hasApiKeys !== undefined &&
+            hasEnabledModels !== undefined &&
+            (!hasApiKeys || !hasEnabledModels) && (
+              <SetupChecklist
+                hasApiKeys={!!hasApiKeys}
+                hasEnabledModels={!!hasEnabledModels}
+              />
+            )}
+
+          <div className="-mx-2">
+            <ChatInput
+              ref={chatInputRef}
+              hasExistingMessages={false}
+              isLoading={false}
+              isStreaming={false}
+              onStop={() => {}}
+              placeholder="Ask me anything..."
+            />
+          </div>
         </div>
       </div>
     </div>

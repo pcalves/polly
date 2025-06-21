@@ -144,13 +144,7 @@ export const ChatInput = React.memo(
           }
         }
       },
-      [
-        props.conversationId,
-        props.onSendMessage,
-        createNewConversationWithResponse,
-        user?._id,
-        router,
-      ]
+      [props, createNewConversationWithResponse, user?._id, router]
     );
 
     // Memoize current model to prevent unnecessary re-renders
@@ -349,10 +343,10 @@ export const ChatInput = React.memo(
     const formClasses = useMemo(
       () =>
         cn(
-          "rounded-xl border p-3 shadow-lg ring-1 transition-all duration-300",
+          "rounded-xl border p-2.5 sm:p-3 shadow-lg transition-all duration-300",
           canSendMessage
-            ? "border-accent-emerald/30 bg-surface-primary ring-accent-emerald/10 hover:shadow-xl hover:ring-accent-emerald/20"
-            : "border-border/30 bg-muted/50 ring-border/10"
+            ? "border-border bg-surface-primary hover:shadow-xl hover:border-muted-foreground/30"
+            : "border-border bg-muted/50"
         ),
       [canSendMessage]
     );
@@ -361,7 +355,7 @@ export const ChatInput = React.memo(
     const textareaClasses = useMemo(
       () =>
         cn(
-          "w-full resize-none bg-transparent border-0 outline-none ring-0 focus:ring-0 text-sm leading-relaxed transition-opacity duration-200 min-h-[24px] max-h-[100px] overflow-y-auto",
+          "w-full resize-none bg-transparent border-0 outline-none ring-0 focus:ring-0 text-base sm:text-sm leading-relaxed transition-opacity duration-200 min-h-[24px] max-h-[100px] overflow-y-auto",
           canSendMessage
             ? "placeholder:text-muted-foreground/60"
             : "placeholder:text-muted-foreground cursor-not-allowed"
@@ -370,8 +364,8 @@ export const ChatInput = React.memo(
     );
 
     return (
-      <div className="px-6 pb-6 pt-2 relative">
-        <div className="max-w-3xl mx-auto">
+      <div className="px-3 sm:px-6 pb-3 sm:pb-6 pt-2 relative">
+        <div className="max-w-3xl mx-auto w-full">
           {warningStates.showLimitWarning &&
             !warningStates.showLimitReached && (
               <WarningBanner type="warning" onDismiss={handleDismissWarning}>
@@ -448,7 +442,7 @@ export const ChatInput = React.memo(
         />
 
         <Dialog open={!!previewFile} onOpenChange={handlePreviewFileClose}>
-          <DialogContent className="max-w-4xl max-h-[90vh] p-0">
+          <DialogContent className="sm:max-w-4xl max-h-[90vh] p-0">
             <div className="p-6">
               {previewFile && (
                 <ConvexFileDisplay

@@ -69,7 +69,7 @@ export function SendButtonGroup({
                   variant="ghost"
                   size="sm"
                   disabled={isLoading || isSummarizing}
-                  className="h-8 w-8 p-0 rounded-l-lg rounded-r-none border border-accent-emerald bg-gradient-to-br from-accent-emerald/10 to-accent-emerald/5 hover:from-accent-emerald/20 hover:to-accent-emerald/10 dark:from-accent-emerald/20 dark:to-accent-emerald/10 dark:hover:from-accent-emerald/30 dark:hover:to-accent-emerald/20 text-accent-emerald transition-all duration-200"
+                  className="min-h-11 w-11 p-0 rounded-l-lg rounded-r-none border border-accent-coral bg-gradient-to-br from-accent-coral/10 to-accent-coral/5 hover:from-accent-coral/20 hover:to-accent-coral/10 dark:from-accent-coral/20 dark:to-accent-coral/10 dark:hover:from-accent-coral/30 dark:hover:to-accent-coral/20 text-accent-coral transition-all duration-200"
                 >
                   <ChevronDown className="h-3 w-3" />
                 </Button>
@@ -111,12 +111,12 @@ export function SendButtonGroup({
         disabled={isStreaming ? !onStop : !canSend}
         size="sm"
         className={cn(
-          "h-8 w-8 p-0 transition-all duration-200 shadow-sm",
+          "min-h-11 w-11 p-0 transition-all duration-200 shadow-sm",
           showDropdown ? "rounded-l-none rounded-r-lg" : "rounded-lg",
           isStreaming
             ? "bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 dark:from-red-600 dark:to-red-700 dark:hover:from-red-700 dark:hover:to-red-800 text-white shadow-lg hover:shadow-xl dark:shadow-red-900/40 dark:hover:shadow-red-900/60 border-0"
             : canSend
-              ? "bg-gradient-to-br from-accent-emerald to-accent-emerald/90 hover:from-accent-emerald/90 hover:to-accent-emerald dark:from-accent-emerald dark:to-accent-emerald/90 dark:hover:from-accent-emerald/90 dark:hover:to-accent-emerald text-white shadow-lg hover:shadow-xl dark:shadow-emerald-900/40 dark:hover:shadow-emerald-900/60 border-0"
+              ? "bg-gradient-to-br from-accent-coral to-accent-coral/90 hover:from-accent-coral/90 hover:to-accent-coral dark:from-accent-coral dark:to-accent-coral/90 dark:hover:from-accent-coral/90 dark:hover:to-accent-coral text-white shadow-lg hover:shadow-xl dark:shadow-coral-900/40 dark:hover:shadow-coral-900/60 border-0"
               : "bg-muted/50 text-muted-foreground/50 cursor-not-allowed dark:bg-muted/30 dark:text-muted-foreground/40"
         )}
         title={
