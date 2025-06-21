@@ -31,7 +31,55 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Polly",
   description:
-    "Multiple AI models in one place - supporting OpenAI, Anthropic, Google, and OpenRouter with BYOK support",
+    "Chat with multiple AI models using your own API keys. Switch between models seamlessly in one beautiful interface. No subscription requireds.",
+
+  // OpenGraph
+  openGraph: {
+    title: "Polly - Multi-Model AI Chat with Your Own API Keys",
+    description:
+      "Chat with multiple AI models using your own API keys. Switch between models seamlessly in one beautiful interface. No subscription required.",
+    url: "https://www.pollyai.chat",
+    siteName: "Polly",
+    type: "website",
+    locale: "en_US",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "Polly AI chat interface showing parrot mascot and multiple AI model options",
+      },
+    ],
+  },
+
+  // Twitter
+  twitter: {
+    card: "summary_large_image",
+    title: "Polly",
+    description:
+      "Chat with multiple AI models using your own API keys. Switch between models seamlessly in one beautiful interface.",
+    images: ["/og-image.png"],
+  },
+
+  // Additional metadata
+  keywords: [
+    "AI chat",
+    "multi-model AI",
+    "API keys",
+    "ChatGPT alternative",
+    "Claude",
+    "Gemini",
+    "OpenAI",
+  ],
+  creator: "Polly",
+  publisher: "Polly",
+  robots: "index, follow",
+
+  // Viewport and theme
+  viewport: "width=device-width, initial-scale=1",
+  themeColor: "#10b981",
+
+  // Icons
   icons: {
     icon: "/favicon.svg",
   },
