@@ -5,9 +5,5 @@ export default function ChatLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return (
-    <SharedChatLayout headerClassName="bg-background border-b border-border/30">
-      {children}
-    </SharedChatLayout>
-  );
+  return <SharedChatLayout>{children}</SharedChatLayout>;
 }
