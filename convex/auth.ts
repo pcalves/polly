@@ -5,8 +5,8 @@ import { MutationCtx } from "./_generated/server";
 export const { auth, signIn, signOut, store } = convexAuth({
   providers: [
     Google({
-      clientId: process.env.AUTH_GOOGLE_ID || "placeholder-client-id",
-      clientSecret: process.env.AUTH_GOOGLE_SECRET || "placeholder-secret",
+      clientId: process.env.AUTH_GOOGLE_ID,
+      clientSecret: process.env.AUTH_GOOGLE_SECRET,
     }),
   ],
   callbacks: {
@@ -82,44 +82,6 @@ export const { auth, signIn, signOut, store } = convexAuth({
           });
           return existingUserByEmail._id;
         }
-      }
-
-      // Check if there are any recent anonymous users that could be candidates for graduation
-      // This is a fallback for cases where the anonymous user ID is lost
-      const recentAnonymousUsers = await ctx.db
-        .query("users")
-        .filter(q => q.eq(q.field("isAnonymous"), true))
-        .order("desc")
-        .take(10); // Check last 10 anonymous users
-
-      // If there's only one recent anonymous user, it's likely the one to graduate
-      if (recentAnonymousUsers.length === 1) {
-        const anonymousUser = recentAnonymousUsers[0];
-        console.log(
-          `[Auth] Found single recent anonymous user to graduate: ${anonymousUser._id}`
-        );
-
-        await ctx.db.patch(anonymousUser._id, {
-          name:
-            typeof args.profile.name === "string"
-              ? args.profile.name
-              : undefined,
-          email:
-            typeof args.profile.email === "string"
-              ? args.profile.email
-              : undefined,
-          emailVerified: args.profile.emailVerified
-            ? typeof args.profile.emailVerified === "number"
-              ? args.profile.emailVerified
-              : Date.now()
-            : undefined,
-          image:
-            typeof args.profile.image === "string"
-              ? args.profile.image
-              : undefined,
-          isAnonymous: false,
-        });
-        return anonymousUser._id;
       }
 
       // No existing user found, create new authenticated user
