@@ -3,9 +3,14 @@
 import { useAuthActions } from "@convex-dev/auth/react";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
+import { useCallback } from "react";
 
 export default function AuthPage() {
   const { signIn } = useAuthActions();
+
+  const handleSignIn = useCallback(() => {
+    signIn("google", { redirectTo: "/auth/callback" });
+  }, [signIn]);
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center">
@@ -30,7 +35,7 @@ export default function AuthPage() {
 
         <div className="space-y-4">
           <Button
-            onClick={() => signIn("google")}
+            onClick={handleSignIn}
             variant="outline"
             className="w-full flex items-center justify-center gap-3 py-6"
           >

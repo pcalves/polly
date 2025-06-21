@@ -2,63 +2,39 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useUserGraduation } from "@/hooks/use-user-graduation";
-import { getAnonymousUserIdFromCookie } from "@/lib/cookies";
+import { useQuery } from "convex/react";
+import { removeAnonymousUserIdCookie } from "@/lib/cookies";
+import { api } from "../../../../convex/_generated/api";
 import Image from "next/image";
 
 export default function AuthCallbackPage() {
   const router = useRouter();
-  const { handleUserGraduation } = useUserGraduation();
-  const [status, setStatus] = useState<"processing" | "success" | "error">(
-    "processing"
-  );
-  const [message, setMessage] = useState<string>("");
+  const authenticatedUser = useQuery(api.users.getCurrentUser);
+  const [status, setStatus] = useState<"processing" | "success">("processing");
 
   useEffect(() => {
-    const handleGraduation = async () => {
-      try {
-        const anonymousUserId = getAnonymousUserIdFromCookie();
+    if (authenticatedUser) {
+      // User is now authenticated - clean up anonymous state and redirect
+      removeAnonymousUserIdCookie();
 
-        if (!anonymousUserId) {
-          // No anonymous user to graduate, just redirect
-          setStatus("success");
-          setMessage("Welcome! Redirecting...");
-          setTimeout(() => router.push("/"), 1500);
-          return;
-        }
-
-        // Attempt graduation
-        const result = await handleUserGraduation();
-
-        if (result.graduated) {
-          setStatus("success");
-          setMessage("Your conversations and settings have been preserved!");
-        } else {
-          setStatus("success");
-          setMessage("Welcome! Redirecting...");
-        }
-
-        // Redirect after showing the message
-        setTimeout(() => router.push("/"), 2000);
-      } catch (error) {
-        console.error("Graduation failed:", error);
-        setStatus("error");
-        setMessage(
-          "There was an issue preserving your data, but you're signed in. Redirecting..."
-        );
-
-        // Still redirect even if graduation fails
-        setTimeout(() => router.push("/"), 3000);
+      // Remove from localStorage as well
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("anonymous-user-id");
       }
-    };
 
-    // Small delay to ensure auth session is established
-    const timer = setTimeout(() => {
-      handleGraduation();
-    }, 500);
+      // Dispatch event to notify other components
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(
+          new CustomEvent("user-graduated", {
+            detail: { userId: authenticatedUser._id },
+          })
+        );
+      }
 
-    return () => clearTimeout(timer);
-  }, [handleUserGraduation, router]);
+      setStatus("success");
+      setTimeout(() => router.push("/"), 2000);
+    }
+  }, [authenticatedUser, router]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">
@@ -106,31 +82,9 @@ export default function AuthCallbackPage() {
               <h2 className="text-xl font-semibold text-foreground">
                 Welcome to Polly!
               </h2>
-              <p className="text-green-600 dark:text-green-400">{message}</p>
-            </>
-          )}
-
-          {status === "error" && (
-            <>
-              <div className="w-8 h-8 rounded-full bg-orange-100 dark:bg-orange-900 flex items-center justify-center mx-auto">
-                <svg
-                  className="w-5 h-5 text-orange-600 dark:text-orange-400"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
-                  />
-                </svg>
-              </div>
-              <h2 className="text-xl font-semibold text-foreground">
-                Almost ready!
-              </h2>
-              <p className="text-orange-600 dark:text-orange-400">{message}</p>
+              <p className="text-green-600 dark:text-green-400">
+                Your conversations and settings have been preserved!
+              </p>
             </>
           )}
         </div>

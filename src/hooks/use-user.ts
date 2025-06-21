@@ -95,26 +95,6 @@ export function useUser(): UseUserReturn {
     }
   }, []);
 
-  // Clear stored anonymous user ID when authenticated user is detected
-  useEffect(() => {
-    if (
-      authenticatedUser &&
-      !authenticatedUser.isAnonymous &&
-      storedAnonymousUserId
-    ) {
-      console.log(
-        "[UseUser] Authenticated user detected, but keeping anonymous user ID until graduation completes"
-      );
-      // Don't automatically clear - let graduation process handle this
-      // setStoredAnonymousUserId(null);
-      // Also clear from storage
-      // if (typeof window !== "undefined") {
-      //   removeAnonymousUserIdCookie();
-      //   localStorage.removeItem(ANONYMOUS_USER_ID_KEY);
-      // }
-    }
-  }, [authenticatedUser, storedAnonymousUserId]);
-
   // Query anonymous user data if no authenticated user and we have a stored ID
   const anonymousUser = useQuery(
     api.users.getById,
