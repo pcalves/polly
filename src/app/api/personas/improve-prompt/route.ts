@@ -1,14 +1,21 @@
-export async function POST(request: Request) {
+import { NextRequest, NextResponse } from "next/server";
+import { withRateLimit } from "@/lib/with-rate-limit";
+import { rateLimitConfigs } from "@/lib/rate-limiter";
+
+async function handlePOST(request: NextRequest) {
   try {
     const { prompt } = await request.json();
 
     if (!prompt || typeof prompt !== "string") {
-      return Response.json({ error: "Prompt is required" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Prompt is required" },
+        { status: 400 }
+      );
     }
 
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
-      return Response.json(
+      return NextResponse.json(
         { error: "Gemini API key not configured" },
         { status: 500 }
       );
@@ -65,12 +72,14 @@ Focus on clarity, specificity, and actionability. Return ONLY the improved syste
       throw new Error("No improvement generated");
     }
 
-    return Response.json({ improvedPrompt });
+    return NextResponse.json({ improvedPrompt });
   } catch (error) {
     console.error("Error improving prompt:", error);
-    return Response.json(
+    return NextResponse.json(
       { error: "Failed to improve prompt" },
       { status: 500 }
     );
   }
 }
+
+export const POST = withRateLimit(rateLimitConfigs.improvePrompt, handlePOST);
