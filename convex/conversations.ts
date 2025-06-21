@@ -320,6 +320,15 @@ export const createNewConversation = action({
       throw new Error("No model selected. Please select a model in Settings.");
     }
 
+    // Fetch persona prompt if personaId is provided but personaPrompt is not
+    let finalPersonaPrompt = args.personaPrompt;
+    if (args.personaId && !finalPersonaPrompt) {
+      const persona = await ctx.runQuery(api.personas.get, {
+        id: args.personaId,
+      });
+      finalPersonaPrompt = persona?.prompt ?? undefined;
+    }
+
     // Batch create conversation and messages in single internal mutation
     const result: {
       conversationId: Id<"conversations">;
@@ -331,7 +340,7 @@ export const createNewConversation = action({
       personaId: args.personaId,
       sourceConversationId: args.sourceConversationId,
       firstMessage: args.firstMessage,
-      personaPrompt: args.personaPrompt,
+      personaPrompt: finalPersonaPrompt,
       attachments: args.attachments,
       useWebSearch: args.useWebSearch,
       model: selectedModel.modelId,
@@ -357,10 +366,10 @@ export const createNewConversation = action({
     }> = [];
 
     // Add system message if persona prompt exists
-    if (args.personaPrompt) {
+    if (finalPersonaPrompt) {
       contextMessages.push({
         role: "system",
-        content: args.personaPrompt,
+        content: finalPersonaPrompt,
       });
     }
 
