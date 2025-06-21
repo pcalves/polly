@@ -114,6 +114,82 @@ function SetupChecklist({
   );
 }
 
+function Mascot({ isMobile }: { isMobile: boolean }) {
+  const sizeClasses = isMobile ? "w-32 h-32" : "w-20 h-20 sm:w-24 sm:h-24";
+  const marginClasses = isMobile ? "mb-4" : "mb-3 sm:mb-4";
+  const imageSize = isMobile ? 128 : 96;
+
+  return (
+    <div className={`flex justify-center ${marginClasses}`}>
+      <div className="relative">
+        <Image
+          src="/polly-mascot.png"
+          alt="Polly AI Mascot"
+          width={imageSize}
+          height={imageSize}
+          className={`${sizeClasses} object-contain drop-shadow-lg relative z-10`}
+        />
+        <div className="absolute inset-0 bg-gradient-to-br from-accent-coral/15 via-accent-orange/15 to-accent-yellow/15 rounded-full blur-lg opacity-50 scale-110"></div>
+      </div>
+    </div>
+  );
+}
+
+function Heading({
+  isAnonymous,
+  isMobile,
+}: {
+  isAnonymous: boolean;
+  isMobile: boolean;
+}) {
+  const titleClasses = isMobile
+    ? "text-2xl font-semibold text-foreground tracking-tight"
+    : "text-xl sm:text-2xl font-semibold text-foreground tracking-tight";
+  const descriptionClasses = isMobile
+    ? "text-base text-muted-foreground leading-relaxed"
+    : "text-sm sm:text-base text-muted-foreground leading-relaxed";
+
+  return (
+    <>
+      <h1 className={titleClasses}>What&apos;s on your mind?</h1>
+      {isAnonymous && (
+        <p className={descriptionClasses}>
+          Pick a prompt to get started, or ask me anything else!
+        </p>
+      )}
+    </>
+  );
+}
+
+function ConditionalSetupChecklist({
+  isAnonymous,
+  hasApiKeys,
+  hasEnabledModels,
+}: {
+  isAnonymous: boolean;
+  hasApiKeys: boolean | undefined;
+  hasEnabledModels: boolean | undefined;
+}) {
+  if (
+    isAnonymous ||
+    hasApiKeys === undefined ||
+    hasEnabledModels === undefined
+  ) {
+    return null;
+  }
+
+  if (hasApiKeys && hasEnabledModels) {
+    return null;
+  }
+
+  return (
+    <SetupChecklist
+      hasApiKeys={!!hasApiKeys}
+      hasEnabledModels={!!hasEnabledModels}
+    />
+  );
+}
+
 function ChatZeroStateContent({
   user,
   hasApiKeys,
@@ -125,13 +201,20 @@ function ChatZeroStateContent({
 }) {
   const isAnonymous = user?.isAnonymous ?? true;
   const chatInputRef = useRef<ChatInputRef>(null);
+  const mobileChatInputRef = useRef<ChatInputRef>(null);
   const { createNewConversationWithResponse } = useCreateConversation();
   const router = useRouter();
 
   const handleQuickPrompt = async (prompt: string) => {
-    if (chatInputRef.current) {
-      chatInputRef.current.setInput(prompt);
-      chatInputRef.current.focus();
+    const desktopInput = chatInputRef.current;
+    const mobileInput = mobileChatInputRef.current;
+
+    if (desktopInput) {
+      desktopInput.setInput(prompt);
+      desktopInput.focus();
+    } else if (mobileInput) {
+      mobileInput.setInput(prompt);
+      mobileInput.focus();
     } else {
       const conversationId = await createNewConversationWithResponse(
         prompt,
@@ -145,32 +228,22 @@ function ChatZeroStateContent({
     }
   };
 
+  const chatInputProps = {
+    hasExistingMessages: false,
+    isLoading: false,
+    isStreaming: false,
+    onStop: () => {},
+    placeholder: "Ask me anything...",
+  };
+
   return (
-    <div className="h-full flex flex-col sm:flex sm:h-full sm:items-center sm:justify-center px-2 sm:px-4 pt-4 sm:pt-6 pb-2 w-full max-w-full overflow-hidden">
-      <div className="max-w-3xl mx-auto w-full min-w-0 h-full sm:h-auto flex flex-col sm:block">
+    <div className="h-full flex flex-col sm:flex sm:h-full sm:items-center sm:justify-center w-full max-w-full overflow-hidden">
+      <div className="mx-auto w-full min-w-0 h-full sm:h-auto flex flex-col sm:block">
         {/* Mobile: Top section with mascot and heading */}
         <div className="flex-1 flex flex-col items-center justify-center sm:hidden">
           <div className="text-center space-y-4">
-            <div className="flex justify-center mb-4">
-              <div className="relative">
-                <Image
-                  src="/polly-mascot.png"
-                  alt="Polly AI Mascot"
-                  width={128}
-                  height={128}
-                  className="w-32 h-32 object-contain drop-shadow-lg relative z-10"
-                />
-                <div className="absolute inset-0 bg-gradient-to-br from-accent-coral/15 via-accent-orange/15 to-accent-yellow/15 rounded-full blur-lg opacity-50 scale-110"></div>
-              </div>
-            </div>
-            <h1 className="text-2xl font-semibold text-foreground tracking-tight">
-              What&apos;s on your mind?
-            </h1>
-            {isAnonymous && (
-              <p className="text-base text-muted-foreground leading-relaxed">
-                Pick a prompt to get started, or ask me anything else!
-              </p>
-            )}
+            <Mascot isMobile={true} />
+            <Heading isAnonymous={isAnonymous} isMobile={true} />
           </div>
 
           {isAnonymous && (
@@ -181,76 +254,32 @@ function ChatZeroStateContent({
         </div>
 
         {/* Desktop: Original centered layout */}
-        <div className="hidden sm:block text-center space-y-6 sm:space-y-8 px-2 sm:px-4 max-w-full">
+        <div className="hidden sm:block text-center space-y-6 sm:space-y-8 max-w-full">
           <div className="space-y-3 sm:space-y-4">
-            <div className="flex justify-center mb-3 sm:mb-4">
-              <div className="relative">
-                <Image
-                  src="/polly-mascot.png"
-                  alt="Polly AI Mascot"
-                  width={96}
-                  height={96}
-                  className="w-20 h-20 sm:w-24 sm:h-24 object-contain drop-shadow-lg relative z-10"
-                />
-                <div className="absolute inset-0 bg-gradient-to-br from-accent-coral/15 via-accent-orange/15 to-accent-yellow/15 rounded-full blur-lg opacity-50 scale-110"></div>
-              </div>
-            </div>
-            <h1 className="text-xl sm:text-2xl font-semibold text-foreground tracking-tight">
-              What&apos;s on your mind?
-            </h1>
-            {isAnonymous && (
-              <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
-                Pick a prompt to get started, or ask me anything else!
-              </p>
-            )}
+            <Mascot isMobile={false} />
+            <Heading isAnonymous={isAnonymous} isMobile={false} />
           </div>
 
           {isAnonymous && <PromptsTicker onQuickPrompt={handleQuickPrompt} />}
 
-          <div className="-mx-2 sm:-mx-4">
-            <ChatInput
-              ref={chatInputRef}
-              hasExistingMessages={false}
-              isLoading={false}
-              isStreaming={false}
-              onStop={() => {}}
-              placeholder="Ask me anything..."
-            />
-          </div>
+          <ChatInput ref={chatInputRef} {...chatInputProps} />
 
-          {!isAnonymous &&
-            hasApiKeys !== undefined &&
-            hasEnabledModels !== undefined &&
-            (!hasApiKeys || !hasEnabledModels) && (
-              <SetupChecklist
-                hasApiKeys={!!hasApiKeys}
-                hasEnabledModels={!!hasEnabledModels}
-              />
-            )}
+          <ConditionalSetupChecklist
+            isAnonymous={isAnonymous}
+            hasApiKeys={hasApiKeys}
+            hasEnabledModels={hasEnabledModels}
+          />
         </div>
 
         {/* Mobile: Bottom section with checklist and chat input */}
         <div className="flex-shrink-0 sm:hidden space-y-4">
-          {!isAnonymous &&
-            hasApiKeys !== undefined &&
-            hasEnabledModels !== undefined &&
-            (!hasApiKeys || !hasEnabledModels) && (
-              <SetupChecklist
-                hasApiKeys={!!hasApiKeys}
-                hasEnabledModels={!!hasEnabledModels}
-              />
-            )}
+          <ConditionalSetupChecklist
+            isAnonymous={isAnonymous}
+            hasApiKeys={hasApiKeys}
+            hasEnabledModels={hasEnabledModels}
+          />
 
-          <div className="-mx-2">
-            <ChatInput
-              ref={chatInputRef}
-              hasExistingMessages={false}
-              isLoading={false}
-              isStreaming={false}
-              onStop={() => {}}
-              placeholder="Ask me anything..."
-            />
-          </div>
+          <ChatInput ref={mobileChatInputRef} {...chatInputProps} />
         </div>
       </div>
     </div>

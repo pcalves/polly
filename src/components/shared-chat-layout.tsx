@@ -10,9 +10,10 @@ interface SharedChatLayoutProps {
 export function SharedChatLayout({ children }: SharedChatLayoutProps) {
   return (
     <UserProvider>
-      <Sidebar>
-        <div className="flex-1 overflow-hidden">{children}</div>
-      </Sidebar>
+      <div className="flex h-screen w-full">
+        <Sidebar />
+        <main className="flex-1 min-w-0">{children}</main>
+      </div>
     </UserProvider>
   );
 }

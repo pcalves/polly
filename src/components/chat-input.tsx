@@ -51,7 +51,7 @@ export interface ChatInputRef {
 const WARNING_BANNER_CLASSES =
   "absolute -top-8 left-1/2 transform -translate-x-1/2 z-10";
 const WARNING_CONTENT_CLASSES =
-  "inline-flex items-center gap-2 p-2.5 rounded-md transition-all duration-200 text-xs shadow-lg";
+  "inline-flex items-center gap-2 p-2.5 rounded-md transition-all duration-200 text-xs shadow-lg h-8 whitespace-nowrap";
 const WARNING_BUTTON_CLASSES = "p-0.5 rounded transition-colors duration-150";
 
 // Warning Banner Component
@@ -72,7 +72,7 @@ const WarningBanner = React.memo<{
   return (
     <div className={WARNING_BANNER_CLASSES}>
       <div className={cn(WARNING_CONTENT_CLASSES, colorClasses)}>
-        <span>{children}</span>
+        <div>{children}</div>
         {onDismiss && (
           <button
             onClick={onDismiss}

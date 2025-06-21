@@ -742,16 +742,16 @@
 
 @keyframes scrollLeft {
   0% {
-    transform: translateX(-25%);
+    transform: translateX(0);
   }
   100% {
-    transform: translateX(calc(-125% / 2));
+    transform: translateX(-50%);
   }
 }
 
 @keyframes scrollRight {
   0% {
-    transform: translateX(calc(-100% / 2));
+    transform: translateX(-50%);
   }
   100% {
     transform: translateX(0);
@@ -766,11 +766,22 @@
 }
 
 .ticker-row-left {
-  animation: scrollLeft 120s linear infinite;
+  animation: scrollLeft 30s linear infinite;
 }
 
 .ticker-row-right {
-  animation: scrollRight 120s linear infinite;
+  animation: scrollRight 35s linear infinite;
+}
+
+/* Mobile-specific ticker optimizations */
+@media (max-width: 768px) {
+  .ticker-row-left {
+    animation: scrollLeft 25s linear infinite;
+  }
+
+  .ticker-row-right {
+    animation: scrollRight 30s linear infinite;
+  }
 }
 
 /* Message animations */

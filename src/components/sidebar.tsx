@@ -21,11 +21,7 @@ import { useParams } from "next/navigation";
 import { useUser } from "@/hooks/use-user";
 import { useSidebar } from "@/hooks/use-sidebar";
 
-interface SidebarProps {
-  children?: React.ReactNode;
-}
-
-export function Sidebar({ children }: SidebarProps) {
+export function Sidebar() {
   const [searchQuery, setSearchQuery] = useState("");
   const { isSidebarVisible, toggleSidebar, isMobile, setSidebarVisible } =
     useSidebar();
@@ -58,7 +54,13 @@ export function Sidebar({ children }: SidebarProps) {
   }, [isMobile, isSidebarVisible, setSidebarVisible]);
 
   return (
-    <div className="h-screen flex relative">
+    <div
+      className={cn(
+        "h-screen flex transition-width duration-300 ease-out",
+        isMobile ? "fixed inset-0 w-0 z-30" : "relative",
+        !isMobile && (isSidebarVisible ? "w-80" : "w-0")
+      )}
+    >
       {isMobile && isSidebarVisible && (
         <div
           className="fixed inset-0 bg-black/50 backdrop-blur-sm z-30 lg:hidden"
@@ -214,29 +216,6 @@ export function Sidebar({ children }: SidebarProps) {
           <UserSection />
         </div>
       </div>
-
-      <div
-        className={cn(
-          "h-screen flex flex-col transition-all duration-300 ease-out min-w-0",
-          isMobile
-            ? "ml-0 w-full"
-            : isSidebarVisible
-              ? "ml-80 w-[calc(100vw-20rem)]"
-              : "ml-0 w-full"
-        )}
-        suppressHydrationWarning
-      >
-        {children}
-      </div>
     </div>
   );
-}
-
-// Legacy exports for backward compatibility
-export function loadSidebarVisibility(): boolean {
-  return false; // deprecated
-}
-
-export function saveSidebarVisibility(): void {
-  // deprecated
 }

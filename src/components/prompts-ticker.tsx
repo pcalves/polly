@@ -142,9 +142,9 @@ export function PromptsTicker({
   ];
 
   return (
-    <div className="py-6">
-      <div className="absolute inset-y-0 left-0 w-16 bg-gradient-to-r from-background to-transparent z-10 pointer-events-none"></div>
-      <div className="absolute inset-y-0 right-0 w-16 bg-gradient-to-l from-background to-transparent z-10 pointer-events-none"></div>
+    <div className="py-6 relative overflow-hidden">
+      <div className="absolute inset-y-0 left-0 w-8 md:w-16 bg-gradient-to-r from-background to-transparent z-10 pointer-events-none"></div>
+      <div className="absolute inset-y-0 right-0 w-8 md:w-16 bg-gradient-to-l from-background to-transparent z-10 pointer-events-none"></div>
       <div className="space-y-4 relative">
         {promptRows.map((rowPrompts, rowIndex) => {
           const duplicatedPrompts = [...rowPrompts, ...rowPrompts];
@@ -152,9 +152,6 @@ export function PromptsTicker({
             <div
               key={rowIndex}
               className={`ticker-row ${rowIndex % 2 === 0 ? "ticker-row-left" : "ticker-row-right"}`}
-              style={{
-                transform: `translateX(${rowIndex % 2 === 0 ? `${-rowIndex * 20}vw` : `${rowIndex * 20}vw`})`,
-              }}
             >
               {duplicatedPrompts.map((prompt, promptIndex) => {
                 const colorConfig =
@@ -165,11 +162,11 @@ export function PromptsTicker({
                   <button
                     key={`${rowIndex}-${promptIndex}`}
                     type="button"
-                    className={`flex-shrink-0 h-auto px-4 py-3 text-left whitespace-nowrap hover:shadow-lg transition-all duration-300 ${colorConfig.bg} ${colorConfig.border} ${colorConfig.hover} hover:scale-105 hover:z-10 relative group rounded-md border`}
+                    className={`flex-shrink-0 h-auto px-3 md:px-4 py-2 md:py-3 text-left whitespace-nowrap hover:shadow-lg transition-all duration-300 ${colorConfig.bg} ${colorConfig.border} ${colorConfig.hover} hover:scale-105 hover:z-10 relative group rounded-md border`}
                     onClick={() => onQuickPrompt(prompt)}
                     style={{ minWidth: "fit-content" }}
                   >
-                    <span className="text-sm font-medium text-foreground group-hover:text-foreground transition-colors">
+                    <span className="text-xs md:text-sm font-medium text-foreground group-hover:text-foreground transition-colors">
                       {prompt}
                     </span>
                   </button>
