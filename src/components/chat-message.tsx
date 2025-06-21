@@ -360,12 +360,9 @@ function ChatMessageComponent({
       ) : (
         <div className="w-full">
           <div className="flex-1 min-w-0">
-            {(reasoning || isStreaming) && (
+            {reasoning && (
               <div className="mb-4">
-                <Reasoning
-                  reasoning={reasoning || ""}
-                  isLoading={isStreaming}
-                />
+                <Reasoning reasoning={reasoning} isLoading={isStreaming} />
               </div>
             )}
 

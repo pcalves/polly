@@ -353,7 +353,6 @@ export const streamResponse = action({
     presencePenalty: v.optional(v.number()),
     enableWebSearch: v.optional(v.boolean()),
     webSearchMaxResults: v.optional(v.number()),
-    enableReasoning: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
     let abortController: AbortController | undefined;
@@ -479,6 +478,17 @@ export const streamResponse = action({
         frequencyPenalty: args.frequencyPenalty,
         presencePenalty: args.presencePenalty,
         abortSignal: abortController.signal,
+        // Enable Google thinking for reasoning models
+        ...(args.provider === "google" &&
+          args.model.includes("gemini-2.5") && {
+            providerOptions: {
+              google: {
+                thinkingConfig: {
+                  includeThoughts: true,
+                },
+              },
+            },
+          }),
         onFinish: async ({
           text,
           finishReason,
@@ -587,68 +597,155 @@ export const streamResponse = action({
         }
       };
 
-      for await (const textPart of result.textStream) {
-        // Check if stopped less frequently to reduce read conflicts
-        if (Date.now() - lastUpdate > 500) {
-          // Check every 500ms instead of every chunk
-          const message = await ctx.runMutation(
-            internal.messages.internalGetById,
-            {
-              id: args.messageId,
-            }
-          );
-          if (message?.metadata?.stopped) {
-            abortController?.abort();
-            throw new Error("StoppedByUser");
-          }
-        }
+      // Check if this is a reasoning-capable model that supports parallel streaming
+      const isReasoningModel =
+        (args.provider === "google" && args.model.includes("gemini-2.5")) ||
+        (args.provider === "anthropic" &&
+          (args.model.includes("claude-opus-4") ||
+            args.model.includes("claude-sonnet-4") ||
+            args.model.includes("claude-3-7-sonnet")));
 
-        if (!hasStartedStreaming) {
-          hasStartedStreaming = true;
-          // Initialize with empty content to show streaming has started
-          await ctx.runMutation(internal.messages.internalUpdate, {
-            id: args.messageId,
-            content: "",
-          });
-        }
-
-        // Add to buffer
-        contentBuffer += textPart;
-
-        // Flush buffer if it's large enough or enough time has passed
-        const timeSinceLastUpdate = Date.now() - lastUpdate;
-        if (
-          contentBuffer.length >= BATCH_SIZE ||
-          timeSinceLastUpdate >= BATCH_TIMEOUT
-        ) {
-          await flushContentBuffer();
-        }
-      }
-
-      // Flush any remaining content
-      await flushContentBuffer();
-
-      // Handle reasoning stream (if available for Anthropic models with thinking support)
-      if (
-        args.provider === "anthropic" &&
-        (args.model.includes("claude-opus-4") ||
-          args.model.includes("claude-sonnet-4") ||
-          args.model.includes("claude-3-7-sonnet"))
-      ) {
+      // Handle streaming with parallel text and reasoning for reasoning-capable models
+      if (isReasoningModel) {
         try {
           const fullStream = result.fullStream;
+
           for await (const part of fullStream) {
-            if (part.type === "reasoning") {
+            // Check if stopped less frequently to reduce read conflicts
+            if (Date.now() - lastUpdate > 500) {
+              const message = await ctx.runMutation(
+                internal.messages.internalGetById,
+                {
+                  id: args.messageId,
+                }
+              );
+              if (message?.metadata?.stopped) {
+                abortController?.abort();
+                throw new Error("StoppedByUser");
+              }
+            }
+
+            if (!hasStartedStreaming) {
+              hasStartedStreaming = true;
+              // Initialize with empty content to show streaming has started
+              await ctx.runMutation(internal.messages.internalUpdate, {
+                id: args.messageId,
+                content: "",
+              });
+            }
+
+            if (part.type === "text-delta") {
+              // Handle text streaming
+              contentBuffer += part.textDelta || "";
+
+              // Flush buffer if it's large enough or enough time has passed
+              const timeSinceLastUpdate = Date.now() - lastUpdate;
+              if (
+                contentBuffer.length >= BATCH_SIZE ||
+                timeSinceLastUpdate >= BATCH_TIMEOUT
+              ) {
+                await flushContentBuffer();
+              }
+            } else if (part.type === "reasoning") {
+              // Handle reasoning streaming in parallel
               await ctx.runMutation(internal.messages.internalAppendReasoning, {
                 id: args.messageId,
                 reasoningChunk: part.textDelta || "",
               });
             }
           }
-        } catch {
-          // Some models don't support reasoning, which is fine
-          console.log("Reasoning stream not available for this model");
+
+          // Flush any remaining content
+          await flushContentBuffer();
+        } catch (error) {
+          // If fullStream fails, fall back to text-only streaming
+          console.log(
+            "Full stream not available, falling back to text stream:",
+            error
+          );
+
+          for await (const textPart of result.textStream) {
+            // Check if stopped less frequently to reduce read conflicts
+            if (Date.now() - lastUpdate > 500) {
+              const message = await ctx.runMutation(
+                internal.messages.internalGetById,
+                {
+                  id: args.messageId,
+                }
+              );
+              if (message?.metadata?.stopped) {
+                abortController?.abort();
+                throw new Error("StoppedByUser");
+              }
+            }
+
+            if (!hasStartedStreaming) {
+              hasStartedStreaming = true;
+              // Initialize with empty content to show streaming has started
+              await ctx.runMutation(internal.messages.internalUpdate, {
+                id: args.messageId,
+                content: "",
+              });
+            }
+
+            // Add to buffer
+            contentBuffer += textPart;
+
+            // Flush buffer if it's large enough or enough time has passed
+            const timeSinceLastUpdate = Date.now() - lastUpdate;
+            if (
+              contentBuffer.length >= BATCH_SIZE ||
+              timeSinceLastUpdate >= BATCH_TIMEOUT
+            ) {
+              await flushContentBuffer();
+            }
+          }
+
+          // Flush any remaining content
+          await flushContentBuffer();
         }
+      } else {
+        // Handle text-only streaming for non-reasoning models
+        for await (const textPart of result.textStream) {
+          // Check if stopped less frequently to reduce read conflicts
+          if (Date.now() - lastUpdate > 500) {
+            // Check every 500ms instead of every chunk
+            const message = await ctx.runMutation(
+              internal.messages.internalGetById,
+              {
+                id: args.messageId,
+              }
+            );
+            if (message?.metadata?.stopped) {
+              abortController?.abort();
+              throw new Error("StoppedByUser");
+            }
+          }
+
+          if (!hasStartedStreaming) {
+            hasStartedStreaming = true;
+            // Initialize with empty content to show streaming has started
+            await ctx.runMutation(internal.messages.internalUpdate, {
+              id: args.messageId,
+              content: "",
+            });
+          }
+
+          // Add to buffer
+          contentBuffer += textPart;
+
+          // Flush buffer if it's large enough or enough time has passed
+          const timeSinceLastUpdate = Date.now() - lastUpdate;
+          if (
+            contentBuffer.length >= BATCH_SIZE ||
+            timeSinceLastUpdate >= BATCH_TIMEOUT
+          ) {
+            await flushContentBuffer();
+          }
+        }
+
+        // Flush any remaining content
+        await flushContentBuffer();
       }
     } catch (error) {
       if (error instanceof Error && error.message === "StoppedByUser") return;

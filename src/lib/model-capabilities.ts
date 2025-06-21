@@ -114,6 +114,8 @@ export function hasReasoningCapabilities(
     case "google":
       return model.modelId.includes("gemini-2.5");
     case "openrouter":
+      // Note: For real-time reasoning detection, the streaming logic in convex/openai.ts
+      // fetches capabilities directly from the OpenRouter API. This fallback uses pattern matching.
       return (
         // OpenAI reasoning models
         model.modelId.includes("o1-") ||

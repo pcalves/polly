@@ -369,8 +369,8 @@ function ChatContainerComponent({
     return (
       lastMessage?.role === "user" ||
       (lastMessage?.role === "assistant" &&
-        ((!lastMessage.content && !lastMessage.reasoning) ||
-          !lastMessage.metadata?.finishReason))
+        !lastMessage.content &&
+        !lastMessage.reasoning)
     );
   }, [isLoading, messages]);
 
