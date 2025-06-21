@@ -5,6 +5,7 @@ import { ChatMessage, Attachment, ConversationId } from "@/types";
 import { useCreateConversation } from "./use-conversations";
 import { useUser } from "./use-user";
 import { useThinking } from "@/providers/thinking-provider";
+import { toast } from "sonner";
 
 import { useChatMessages } from "./use-chat-messages";
 
@@ -102,6 +103,13 @@ export function useChat({
           );
         } catch (error) {
           hasAttemptedResumeRef.current = null;
+          const errorMessage =
+            error instanceof Error
+              ? error.message
+              : "Failed to resume conversation";
+          toast.error("Failed to resume conversation", {
+            description: errorMessage,
+          });
           onError?.(error as Error);
         }
       };
@@ -129,11 +137,12 @@ export function useChat({
       if (!content.trim() && !attachments?.length) return;
 
       if (!canSendMessage) {
-        onError?.(
-          new Error(
-            "Message limit reached. Please sign in to continue chatting."
-          )
-        );
+        const errorMsg =
+          "Message limit reached. Please sign in to continue chatting.";
+        toast.error("Cannot send message", {
+          description: errorMsg,
+        });
+        onError?.(new Error(errorMsg));
         return;
       }
 
@@ -184,9 +193,19 @@ export function useChat({
             })
           );
         } else {
-          throw new Error("No model selected");
+          const errorMsg =
+            "No model selected. Please select a model in the model picker to send messages.";
+          toast.error("Cannot send message", {
+            description: errorMsg,
+          });
+          throw new Error(errorMsg);
         }
       } catch (error) {
+        const errorMessage =
+          error instanceof Error ? error.message : "Failed to send message";
+        toast.error("Failed to send message", {
+          description: errorMessage,
+        });
         onError?.(error as Error);
       }
     },
@@ -217,11 +236,12 @@ export function useChat({
       if (!content.trim() && !attachments?.length) return;
 
       if (!canSendMessage) {
-        onError?.(
-          new Error(
-            "Message limit reached. Please sign in to continue chatting."
-          )
-        );
+        const errorMsg =
+          "Message limit reached. Please sign in to continue chatting.";
+        toast.error("Cannot send message", {
+          description: errorMsg,
+        });
+        onError?.(new Error(errorMsg));
         return;
       }
 
@@ -266,6 +286,13 @@ export function useChat({
 
         return newConversationId;
       } catch (error) {
+        const errorMessage =
+          error instanceof Error
+            ? error.message
+            : "Failed to create new conversation";
+        toast.error("Failed to create conversation", {
+          description: errorMessage,
+        });
         onError?.(error as Error);
       }
     },
@@ -281,14 +308,38 @@ export function useChat({
   );
 
   const regenerateMessage = useCallback(async () => {
-    if (!currentConversationId || !selectedModel) return;
+    if (!currentConversationId) {
+      const errorMsg = "No conversation found";
+      toast.error("Cannot regenerate message", {
+        description: errorMsg,
+      });
+      onError?.(new Error(errorMsg));
+      return;
+    }
+
+    if (!selectedModel) {
+      const errorMsg =
+        "No model selected. Please select a model in the model picker to regenerate messages.";
+      toast.error("Cannot regenerate message", {
+        description: errorMsg,
+      });
+      onError?.(new Error(errorMsg));
+      return;
+    }
 
     // Find the last user message to retry from
     const lastUserMessage = chatMessages.convexMessages
       ?.filter(msg => msg.role === "user")
       .pop();
 
-    if (!lastUserMessage) return;
+    if (!lastUserMessage) {
+      const errorMsg = "No user message found to regenerate from";
+      toast.error("Cannot regenerate message", {
+        description: errorMsg,
+      });
+      onError?.(new Error(errorMsg));
+      return;
+    }
 
     try {
       await withLoadingState(() =>
@@ -301,6 +352,11 @@ export function useChat({
         })
       );
     } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to regenerate message";
+      toast.error("Failed to regenerate message", {
+        description: errorMessage,
+      });
       onError?.(error as Error);
     }
   }, [
@@ -320,6 +376,12 @@ export function useChat({
         });
       } catch (error) {
         console.error("Failed to stop generation:", error);
+        toast.error("Failed to stop generation", {
+          description:
+            error instanceof Error
+              ? error.message
+              : "Unable to stop message generation",
+        });
       }
     }
     setIsGenerating(false);
@@ -333,7 +395,24 @@ export function useChat({
 
   const editMessage = useCallback(
     async (messageId: string, newContent: string) => {
-      if (!currentConversationId || !selectedModel) return;
+      if (!currentConversationId) {
+        const errorMsg = "No conversation found";
+        toast.error("Cannot edit message", {
+          description: errorMsg,
+        });
+        onError?.(new Error(errorMsg));
+        return;
+      }
+
+      if (!selectedModel) {
+        const errorMsg =
+          "No model selected. Please select a model in the model picker to edit messages.";
+        toast.error("Cannot edit message", {
+          description: errorMsg,
+        });
+        onError?.(new Error(errorMsg));
+        return;
+      }
 
       try {
         await withLoadingState(() =>
@@ -346,6 +425,11 @@ export function useChat({
           })
         );
       } catch (error) {
+        const errorMessage =
+          error instanceof Error ? error.message : "Failed to edit message";
+        toast.error("Failed to edit message", {
+          description: errorMessage,
+        });
         onError?.(error as Error);
       }
     },
@@ -360,7 +444,24 @@ export function useChat({
 
   const retryUserMessage = useCallback(
     async (messageId: string) => {
-      if (!currentConversationId || !selectedModel) return;
+      if (!currentConversationId) {
+        const errorMsg = "No conversation found";
+        toast.error("Cannot retry message", {
+          description: errorMsg,
+        });
+        onError?.(new Error(errorMsg));
+        return;
+      }
+
+      if (!selectedModel) {
+        const errorMsg =
+          "No model selected. Please select a model in the model picker to retry messages.";
+        toast.error("Cannot retry message", {
+          description: errorMsg,
+        });
+        onError?.(new Error(errorMsg));
+        return;
+      }
 
       try {
         await withLoadingState(() =>
@@ -373,6 +474,11 @@ export function useChat({
           })
         );
       } catch (error) {
+        const errorMessage =
+          error instanceof Error ? error.message : "Failed to retry message";
+        toast.error("Failed to retry message", {
+          description: errorMessage,
+        });
         onError?.(error as Error);
       }
     },
@@ -387,7 +493,24 @@ export function useChat({
 
   const retryAssistantMessage = useCallback(
     async (messageId: string) => {
-      if (!currentConversationId || !selectedModel) return;
+      if (!currentConversationId) {
+        const errorMsg = "No conversation found";
+        toast.error("Cannot retry message", {
+          description: errorMsg,
+        });
+        onError?.(new Error(errorMsg));
+        return;
+      }
+
+      if (!selectedModel) {
+        const errorMsg =
+          "No model selected. Please select a model in the model picker to retry messages.";
+        toast.error("Cannot retry message", {
+          description: errorMsg,
+        });
+        onError?.(new Error(errorMsg));
+        return;
+      }
 
       try {
         await withLoadingState(() =>
@@ -400,6 +523,11 @@ export function useChat({
           })
         );
       } catch (error) {
+        const errorMessage =
+          error instanceof Error ? error.message : "Failed to retry message";
+        toast.error("Failed to retry message", {
+          description: errorMessage,
+        });
         onError?.(error as Error);
       }
     },
