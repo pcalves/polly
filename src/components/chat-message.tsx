@@ -67,6 +67,7 @@ interface MessageActionsProps {
   onRetryMessage?: () => void;
   onDeleteMessage?: () => void;
   model?: string;
+  provider?: string;
   className?: string;
 }
 
@@ -83,6 +84,7 @@ const MessageActions = memo(
     onRetryMessage,
     onDeleteMessage,
     model,
+    provider,
     className,
   }: MessageActionsProps) => {
     if (isStreaming) return null;
@@ -148,24 +150,19 @@ const MessageActions = memo(
 
         {!isUser && (
           <>
-            <span className="text-xs text-muted-foreground/70">•</span>
-            <span className="text-xs text-muted-foreground/70">
-              {model || "Assistant"}
-            </span>
-            {isStreaming && (
-              <>
-                <span className="text-xs text-muted-foreground/70">•</span>
-                <div className="flex items-center gap-1.5">
-                  <div className="flex space-x-1">
-                    <div className="w-1 h-1 bg-primary rounded-full typing-dot"></div>
-                    <div className="w-1 h-1 bg-primary rounded-full typing-dot"></div>
-                    <div className="w-1 h-1 bg-primary rounded-full typing-dot"></div>
-                  </div>
-                  <span className="text-xs text-accent-emerald">
-                    Thinking...
-                  </span>
-                </div>
-              </>
+            {model && provider === "openrouter" ? (
+              <a
+                href={`https://openrouter.ai/${model}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-muted-foreground/70 hover:text-foreground transition-colors underline underline-offset-2"
+              >
+                {model}
+              </a>
+            ) : (
+              <span className="text-xs text-muted-foreground/70">
+                {model || "Assistant"}
+              </span>
             )}
           </>
         )}
@@ -411,6 +408,7 @@ function ChatMessageComponent({
               onRetryMessage={onRetryMessage ? handleRetry : undefined}
               onDeleteMessage={onDeleteMessage ? handleDelete : undefined}
               model={message.model}
+              provider={message.provider}
             />
           </div>
         </div>

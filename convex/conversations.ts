@@ -53,6 +53,8 @@ export const createWithMessages = internalMutation({
       )
     ),
     useWebSearch: v.optional(v.boolean()),
+    model: v.optional(v.string()),
+    provider: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const now = Date.now();
@@ -100,6 +102,8 @@ export const createWithMessages = internalMutation({
       conversationId,
       role: "assistant",
       content: "",
+      model: args.model,
+      provider: args.provider,
       isMainBranch: true,
       createdAt: now,
     });
@@ -308,6 +312,14 @@ export const createNewConversation = action({
       userId: actualUserId,
     });
 
+    // Get user's selected model
+    const selectedModel = await ctx.runQuery(
+      api.userModels.getUserSelectedModel
+    );
+    if (!selectedModel) {
+      throw new Error("No model selected. Please select a model in Settings.");
+    }
+
     // Batch create conversation and messages in single internal mutation
     const result: {
       conversationId: Id<"conversations">;
@@ -322,15 +334,9 @@ export const createNewConversation = action({
       personaPrompt: args.personaPrompt,
       attachments: args.attachments,
       useWebSearch: args.useWebSearch,
+      model: selectedModel.modelId,
+      provider: selectedModel.provider,
     });
-
-    // Get user's selected model
-    const selectedModel = await ctx.runQuery(
-      api.userModels.getUserSelectedModel
-    );
-    if (!selectedModel) {
-      throw new Error("No model selected. Please select a model in Settings.");
-    }
 
     // Build context messages for AI response
     const contextMessages: Array<{
