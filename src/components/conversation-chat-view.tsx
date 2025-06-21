@@ -40,13 +40,6 @@ interface ConversationChatViewProps {
     useWebSearch?: boolean,
     personaId?: Id<"personas"> | null
   ) => void;
-  onSendAsNewConversation: (
-    content: string,
-    navigate: boolean,
-    attachments?: Attachment[],
-    contextSummary?: string,
-    personaId?: Id<"personas"> | null
-  ) => Promise<void>;
   onEditMessage?: (messageId: string, content: string) => void;
   onRetryUserMessage?: (messageId: string) => void;
   onRetryAssistantMessage?: (messageId: string) => void;
@@ -62,7 +55,6 @@ export function ConversationChatView({
   isStreaming,
   hasApiKeys,
   onSendMessage,
-  onSendAsNewConversation,
   onEditMessage,
   onRetryUserMessage,
   onRetryAssistantMessage,
@@ -233,33 +225,6 @@ export function ConversationChatView({
     [onSendMessage, hasApiKeys]
   );
 
-  const handleSendAsNewConversation = useCallback(
-    async (
-      content: string,
-      navigate: boolean,
-      attachments?: Attachment[],
-      contextSummary?: string,
-      personaId?: Id<"personas"> | null
-    ) => {
-      if (!hasApiKeys) {
-        return;
-      }
-
-      await onSendAsNewConversation(
-        content,
-        navigate,
-        attachments,
-        contextSummary,
-        personaId
-      );
-
-      setTimeout(() => {
-        chatInputRef.current?.focus();
-      }, 0);
-    },
-    [onSendAsNewConversation, hasApiKeys]
-  );
-
   const handleAddQuote = useCallback((quote: string) => {
     chatInputRef.current?.addQuote(quote);
   }, []);
@@ -286,11 +251,6 @@ export function ConversationChatView({
     },
     [smoothScrollToMessage]
   );
-
-  const handleQuickPrompt = useCallback((prompt: string) => {
-    chatInputRef.current?.setInput(prompt);
-    chatInputRef.current?.focus();
-  }, []);
 
   const handleDeleteMessage = useCallback(
     (messageId: string) => {
@@ -342,7 +302,7 @@ export function ConversationChatView({
                 {isLoadingConversation ? (
                   <div />
                 ) : isEmpty ? (
-                  <ChatZeroState onQuickPrompt={handleQuickPrompt} />
+                  <ChatZeroState />
                 ) : (
                   <div className={cn("space-y-4", dynamicBottomSpacing)}>
                     <div
@@ -431,7 +391,6 @@ export function ConversationChatView({
                   <ChatInput
                     ref={chatInputRef}
                     onSendMessage={handleSendMessage}
-                    onSendAsNewConversation={handleSendAsNewConversation}
                     conversationId={conversationId}
                     hasExistingMessages={messages.length > 0}
                     isLoading={isLoading}

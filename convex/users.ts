@@ -151,9 +151,11 @@ export const getMonthlyUsage = query({
 
 // Check if user has access to BYOK models (has API keys)
 export const hasUserApiKeys = query({
-  args: {},
-  handler: async ctx => {
-    const userId = await getCurrentUserId(ctx);
+  args: {
+    userId: v.optional(v.id("users")),
+  },
+  handler: async (ctx, args) => {
+    const userId = args.userId || (await getCurrentUserId(ctx));
     if (!userId) {
       return false;
     }
@@ -161,7 +163,6 @@ export const hasUserApiKeys = query({
     const apiKeys = await ctx.db
       .query("userApiKeys")
       .withIndex("by_user", q => q.eq("userId", userId))
-      .filter(q => q.eq(q.field("isValid"), true))
       .collect();
 
     return apiKeys.length > 0;

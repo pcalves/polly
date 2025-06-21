@@ -22,19 +22,14 @@ import { AttachmentList } from "@/components/chat-input/attachment-list";
 import { InputControls } from "@/components/chat-input/input-controls";
 import { Id } from "../../convex/_generated/dataModel";
 import { useUser } from "@/hooks/use-user";
+import { useCreateConversation } from "@/hooks/use-conversations";
+import { useRouter } from "next/navigation";
 
 interface ChatInputProps {
-  onSendMessage: (
+  onSendMessage?: (
     content: string,
     attachments?: Attachment[],
     useWebSearch?: boolean,
-    personaId?: Id<"personas"> | null
-  ) => void;
-  onSendAsNewConversation?: (
-    content: string,
-    navigate: boolean,
-    attachments?: Attachment[],
-    contextSummary?: string,
     personaId?: Id<"personas"> | null
   ) => void;
   onInputStart?: () => void;
@@ -108,6 +103,10 @@ export const ChatInput = React.memo(
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const inputControlsRef = useRef<{ handleSubmit: () => void } | null>(null);
 
+    const { user } = useUser();
+    const { createNewConversationWithResponse } = useCreateConversation();
+    const router = useRouter();
+
     const {
       messageCount,
       remainingMessages,
@@ -118,6 +117,41 @@ export const ChatInput = React.memo(
       hasUserApiKeys,
       hasUnlimitedCalls,
     } = useUser();
+
+    // Unified send function that handles both existing conversations and new ones
+    const handleSend = useCallback(
+      async (
+        content: string,
+        attachments?: Attachment[],
+        useWebSearch?: boolean,
+        personaId?: Id<"personas"> | null
+      ) => {
+        if (props.conversationId && props.onSendMessage) {
+          // Existing conversation - use the provided handler
+          props.onSendMessage(content, attachments, useWebSearch, personaId);
+        } else {
+          // New conversation - create one
+          const conversationId = await createNewConversationWithResponse(
+            content,
+            undefined,
+            personaId,
+            user?._id,
+            attachments,
+            useWebSearch
+          );
+          if (conversationId) {
+            router.push(`/chat/${conversationId}`);
+          }
+        }
+      },
+      [
+        props.conversationId,
+        props.onSendMessage,
+        createNewConversationWithResponse,
+        user?._id,
+        router,
+      ]
+    );
 
     // Memoize current model to prevent unnecessary re-renders
     const currentModel = useMemo(() => {
@@ -336,7 +370,7 @@ export const ChatInput = React.memo(
     );
 
     return (
-      <div className="p-6 relative">
+      <div className="px-6 pb-6 pt-2 relative">
         <div className="max-w-3xl mx-auto">
           {warningStates.showLimitWarning &&
             !warningStates.showLimitReached && (
@@ -396,8 +430,7 @@ export const ChatInput = React.memo(
                 clearAttachments={clearAttachments}
                 clearInput={clearInput}
                 handleFileUpload={handleFileUpload}
-                onSendMessage={props.onSendMessage}
-                onSendAsNewConversation={props.onSendAsNewConversation}
+                onSendMessage={handleSend}
                 onInputStart={props.onInputStart}
               />
             </div>

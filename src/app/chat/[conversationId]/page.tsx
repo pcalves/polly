@@ -47,7 +47,6 @@ function ConversationPageContent({
     isLoading,
     isLoadingMessages,
     sendMessage,
-    sendMessageToNewConversation,
     editMessage,
     retryUserMessage,
     retryAssistantMessage,
@@ -88,32 +87,6 @@ function ConversationPageContent({
     [conversation, personas, sendMessage]
   );
 
-  const handleSendAsNewConversation = useCallback(
-    async (
-      content: string,
-      navigate: boolean,
-      attachments?: Attachment[],
-      contextSummary?: string,
-      personaId?: Id<"personas"> | null
-    ) => {
-      const persona = personaId
-        ? personas?.find(p => p._id === personaId)
-        : null;
-      const personaPrompt = persona?.prompt || null;
-
-      await sendMessageToNewConversation(
-        content,
-        attachments,
-        navigate,
-        contextSummary,
-        conversationId,
-        personaPrompt,
-        personaId
-      );
-    },
-    [personas, sendMessageToNewConversation, conversationId]
-  );
-
   // Handle loading states
   if (userLoading || conversation === undefined) {
     return <div className="h-full" />;
@@ -134,7 +107,6 @@ function ConversationPageContent({
       isStreaming={isStreaming}
       hasApiKeys={hasApiKeys || false}
       onSendMessage={handleSendMessage}
-      onSendAsNewConversation={handleSendAsNewConversation}
       onEditMessage={editMessage}
       onRetryUserMessage={retryUserMessage}
       onRetryAssistantMessage={retryAssistantMessage}

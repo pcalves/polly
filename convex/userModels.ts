@@ -4,9 +4,11 @@ import { requireAuth, getOptionalUserId } from "./lib/auth";
 import { Id } from "./_generated/dataModel";
 
 export const getUserModels = query({
-  args: {},
-  handler: async ctx => {
-    const userId = await getOptionalUserId(ctx);
+  args: {
+    userId: v.optional(v.id("users")),
+  },
+  handler: async (ctx, args) => {
+    const userId = args.userId || (await getOptionalUserId(ctx));
 
     if (!userId) {
       return [];

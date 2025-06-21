@@ -20,8 +20,7 @@ import { WebSearchToggle } from "@/components/web-search-toggle";
 import { SendButtonGroup } from "./send-button-group";
 import { AIModel } from "@/types";
 import { Attachment } from "@/types";
-import { useAction } from "convex/react";
-import { api } from "../../../convex/_generated/api";
+
 import { Id } from "../../../convex/_generated/dataModel";
 import { useUser } from "@/hooks/use-user";
 import { useUserSettings } from "@/hooks/use-user-settings";
@@ -53,13 +52,6 @@ interface InputControlsProps {
     useWebSearch?: boolean,
     personaId?: Id<"personas"> | null
   ) => void;
-  onSendAsNewConversation?: (
-    content: string,
-    navigate: boolean,
-    attachments?: Attachment[],
-    contextSummary?: string,
-    personaId?: Id<"personas"> | null
-  ) => void;
   onInputStart?: () => void;
 }
 
@@ -88,14 +80,12 @@ export const InputControls = forwardRef<InputControlsRef, InputControlsProps>(
       clearInput,
       handleFileUpload,
       onSendMessage,
-      onSendAsNewConversation,
       onInputStart,
     },
     ref
   ) => {
     // Internal state
     const [webSearchEnabled, setWebSearchEnabled] = useState(false);
-    const [isSummarizing, setIsSummarizing] = useState(false);
     const [selectedPersonaId, setSelectedPersonaId] =
       useState<Id<"personas"> | null>(null);
     const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -105,11 +95,6 @@ export const InputControls = forwardRef<InputControlsRef, InputControlsProps>(
     const userSettings = useUserSettings(userInfo.user?._id);
     const personasEnabled = userSettings?.personasEnabled !== false;
 
-    // Actions
-    const generateSummary = useAction(
-      api.conversationSummary.generateConversationSummary
-    );
-
     // Handle file input change
     const handleFileInputChange = useCallback(
       (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -117,61 +102,6 @@ export const InputControls = forwardRef<InputControlsRef, InputControlsProps>(
         e.target.value = "";
       },
       [handleFileUpload]
-    );
-
-    // Handle sending message as new conversation
-    const handleSendAsNewConversation = useCallback(
-      async (navigate: boolean) => {
-        if (!input.trim() && attachments.length === 0) return;
-        if (isLoading || !canChat || !onSendAsNewConversation) return;
-
-        let contextSummary: string | undefined;
-
-        if (conversationId && hasExistingMessages) {
-          try {
-            setIsSummarizing(true);
-            contextSummary = await generateSummary({
-              conversationId: conversationId as Id<"conversations">,
-            });
-          } catch (error) {
-            console.error("Failed to generate conversation summary:", error);
-            contextSummary =
-              "Previous conversation (summary failed to generate)";
-          } finally {
-            setIsSummarizing(false);
-          }
-        }
-
-        const messageContent = buildMessageContent(input);
-        const binaryAttachments = getBinaryAttachments();
-
-        onSendAsNewConversation(
-          messageContent,
-          navigate,
-          binaryAttachments,
-          contextSummary,
-          selectedPersonaId
-        );
-
-        // Clear the form
-        clearInput();
-        clearAttachments();
-      },
-      [
-        input,
-        attachments,
-        isLoading,
-        canChat,
-        onSendAsNewConversation,
-        conversationId,
-        hasExistingMessages,
-        generateSummary,
-        buildMessageContent,
-        getBinaryAttachments,
-        clearAttachments,
-        clearInput,
-        selectedPersonaId,
-      ]
     );
 
     // Handle submit
@@ -315,12 +245,11 @@ export const InputControls = forwardRef<InputControlsRef, InputControlsProps>(
               canSend={canSend}
               isStreaming={isStreaming}
               isLoading={isLoading}
-              isSummarizing={isSummarizing}
+              isSummarizing={false}
               hasExistingMessages={hasExistingMessages}
               conversationId={conversationId}
               onSend={handleSubmit}
               onStop={onStop}
-              onSendAsNewConversation={handleSendAsNewConversation}
               hasApiKeys={hasApiKeys}
               hasEnabledModels={hasEnabledModels}
             />

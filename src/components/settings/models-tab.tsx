@@ -25,6 +25,7 @@ import {
 import { useDebounce } from "@/hooks/use-debounce";
 import dynamic from "next/dynamic";
 import { SettingsHeader } from "./settings-header";
+import { useUser } from "@/hooks/use-user";
 
 // Dynamically import heavy components
 const VirtualizedModelList = dynamic(
@@ -298,9 +299,13 @@ export function ModelsTab() {
     300
   );
 
+  const { user } = useUser();
   // Get API keys and enabled models from Convex
   const apiKeys = useQuery(api.apiKeys.getUserApiKeys);
-  const enabledModels = useQuery(api.userModels.getUserModels);
+  const enabledModels = useQuery(
+    api.userModels.getUserModels,
+    !user?.isAnonymous && user?._id ? { userId: user._id } : {}
+  );
 
   // Memoize expensive computations
   const availableProviders = useMemo(

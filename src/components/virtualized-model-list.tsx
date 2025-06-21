@@ -17,6 +17,7 @@ import {
 import { ProviderIcon } from "@/components/provider-icons";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
+import { useUser } from "@/hooks/use-user";
 
 // Generic model interface that works with both AIModel and other model types
 interface BaseModel {
@@ -184,7 +185,11 @@ export const VirtualizedModelList = memo(
     const parentRef = useRef<HTMLDivElement>(null);
     const [columnsPerRow, setColumnsPerRow] = useState(4);
 
-    const enabledModels = useQuery(api.userModels.getUserModels);
+    const { user } = useUser();
+    const enabledModels = useQuery(
+      api.userModels.getUserModels,
+      !user?.isAnonymous && user?._id ? { userId: user._id } : {}
+    );
     const toggleModel = useMutation(api.userModels.toggleModel);
 
     // Memoize enabled models lookup for better performance
