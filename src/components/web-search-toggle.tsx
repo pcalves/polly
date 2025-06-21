@@ -68,7 +68,7 @@ export function WebSearchToggle({
           )}
         >
           <Globe className="h-3.5 w-3.5 text-muted-foreground group-hover:text-foreground transition-colors" />
-          <span className="ml-1.5 text-xs font-medium text-muted-foreground group-hover:text-foreground transition-colors">
+          <span className="ml-1.5 text-xs font-medium text-muted-foreground group-hover:text-foreground transition-colors hidden sm:inline">
             Search
           </span>
         </Button>

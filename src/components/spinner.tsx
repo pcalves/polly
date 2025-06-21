@@ -23,7 +23,7 @@ export function Spinner({ className, size = "md" }: SpinnerProps) {
   return (
     <div className={cn("inline-flex items-center justify-center", className)}>
       <svg
-        className={cn("animate-spin text-accent-emerald", sizeClasses[size])}
+        className={cn("animate-spin text-accent-coral", sizeClasses[size])}
         xmlns="http://www.w3.org/2000/svg"
         fill="none"
         viewBox="0 0 24 24"

@@ -116,10 +116,10 @@ export function PromptsTicker({
         "hover:bg-accent-blue/15 dark:hover:bg-accent-blue/20 hover:border-accent-blue/50",
     },
     {
-      bg: "bg-accent-emerald/10 dark:bg-accent-emerald/15",
-      border: "border-accent-emerald/30",
+      bg: "bg-accent-coral/10 dark:bg-accent-coral/15",
+      border: "border-accent-coral/30",
       hover:
-        "hover:bg-accent-emerald/15 dark:hover:bg-accent-emerald/20 hover:border-accent-emerald/50",
+        "hover:bg-accent-coral/15 dark:hover:bg-accent-coral/20 hover:border-accent-coral/50",
     },
     {
       bg: "bg-accent-yellow/10 dark:bg-accent-yellow/15",

@@ -80,7 +80,7 @@ export function ConvexFileDisplay({
       <span>{attachment.type === "pdf" ? "📄" : "📝"}</span>
       <span>{attachment.name}</span>
       {attachment.storageId && (
-        <span className="text-xs text-muted-foreground bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded-full">
+        <span className="text-xs text-muted-foreground bg-coral-100 text-coral-700 px-1.5 py-0.5 rounded-full">
           Stored
         </span>
       )}

@@ -17,7 +17,8 @@ const OpenAIIcon = () => (
 const AnthropicIcon = () => (
   <svg
     viewBox="0 0 46 32"
-    className="w-9 h-6 fill-foreground"
+    className="w-9 h-6"
+    fill="currentColor"
     xmlns="http://www.w3.org/2000/svg"
   >
     <title>Anthropic</title>
@@ -29,7 +30,7 @@ const AnthropicIcon = () => (
 const GoogleIcon = () => (
   <svg
     viewBox="0 0 17 17"
-    className="fill-foreground"
+    fill="currentColor"
     xmlns="http://www.w3.org/2000/svg"
   >
     <title>Gemini</title>
@@ -40,7 +41,8 @@ const GoogleIcon = () => (
 const OpenRouterIcon = () => (
   <svg
     viewBox="0 0 24 24"
-    className="w-7 h-7 fill-foreground"
+    className="w-7 h-7"
+    fill="currentColor"
     xmlns="http://www.w3.org/2000/svg"
   >
     <title>OpenRouter</title>
