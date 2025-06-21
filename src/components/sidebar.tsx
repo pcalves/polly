@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { SidebarSearch } from "@/components/sidebar/search";
-import { ConversationListClient } from "@/components/sidebar/conversation-list-client";
+import { ConversationList } from "@/components/sidebar/conversation-list";
 import { UserSection } from "@/components/sidebar/user-section";
 import { ConversationId } from "@/types";
 import { Settings, PanelLeft } from "lucide-react";
@@ -235,7 +235,7 @@ export function Sidebar({ children }: SidebarProps) {
           </div>
 
           <div className="flex-1 overflow-y-auto px-2 min-h-0 scrollbar-thin">
-            <ConversationListClient
+            <ConversationList
               searchQuery={searchQuery}
               currentConversationId={currentConversationId}
             />
