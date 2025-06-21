@@ -273,7 +273,7 @@ function ChatMessageComponent({
         </div>
       );
     },
-    [message.attachments]
+    [message]
   );
 
   return (

@@ -424,7 +424,7 @@ export function useChat({
         msg.content &&
         chatMessages.isMessageStreaming(msg.id, isGenerating)
     );
-  }, [chatMessages.messages, chatMessages.isMessageStreaming, isGenerating]);
+  }, [chatMessages, isGenerating]);
 
   const isStreamingInCurrentConversation = useMemo(() => {
     if (!currentConversationId) return false;

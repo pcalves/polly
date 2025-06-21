@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/tooltip";
 import { Search, X, MessageCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useConversationSearch } from "@/hooks/use-conversation-search";
 import { api } from "../../../convex/_generated/api";
 import { useQuery } from "convex/react";
@@ -33,10 +33,10 @@ export function SidebarSearch({ searchQuery, onSearchChange }: SearchProps) {
     searchQuery
   );
 
-  const clearSearch = () => {
+  const clearSearch = useCallback(() => {
     onSearchChange("");
     setIsSearchFocused(false);
-  };
+  }, [onSearchChange]);
 
   // Keyboard shortcuts
   useEffect(() => {

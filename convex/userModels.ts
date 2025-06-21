@@ -301,5 +301,6 @@ function getAnonymousDefaultModel() {
     supportsReasoning: true,
     isPollyProvided: true,
     free: true,
+    createdAt: Date.now(),
   };
 }

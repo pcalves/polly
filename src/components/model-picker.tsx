@@ -444,7 +444,7 @@ function ModelPickerComponent({ className }: ModelPickerProps) {
                         {providerTitle}
                       </span>
                     </div>
-                    {provider.models.map((model: AIModel) => (
+                    {provider.models.map(model => (
                       <ModelItem
                         key={model.modelId}
                         model={model}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { cn } from "@/lib/utils";
 
 interface ParrotLogoProps {
@@ -58,7 +58,7 @@ export function ParrotLogo({
   }, []);
 
   // Function to change companion emoji with fade effect
-  const changeCompanionEmoji = () => {
+  const changeCompanionEmoji = useCallback(() => {
     setIsVisible(false);
     setTimeout(() => {
       const currentIndex = COMPANION_EMOJIS.indexOf(companionEmoji);
@@ -70,7 +70,7 @@ export function ParrotLogo({
       setCompanionEmoji(COMPANION_EMOJIS[newIndex]);
       setIsVisible(true);
     }, 100);
-  };
+  }, [companionEmoji]);
 
   // Expose the change function globally for when messages are sent
   useEffect(() => {
