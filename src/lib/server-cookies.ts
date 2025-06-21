@@ -37,35 +37,12 @@ export async function getConvexAuthSessionToken(): Promise<string | null> {
     for (const cookieName of possibleCookieNames) {
       const sessionToken = cookieStore.get(cookieName)?.value;
       if (sessionToken) {
-        console.log(
-          `[ServerAuth] Found session token in cookie: ${cookieName}`
-        );
         return sessionToken;
       }
     }
 
-    // Also check all cookies to see what's available (for debugging)
-    const allCookies = cookieStore.getAll();
-    const authCookies = allCookies.filter(
-      cookie =>
-        cookie.name.includes("auth") ||
-        cookie.name.includes("session") ||
-        cookie.name.includes("convex")
-    );
-
-    if (authCookies.length > 0) {
-      console.log(
-        "[ServerAuth] Available auth-related cookies:",
-        authCookies.map(c => c.name).join(", ")
-      );
-    }
-
     return null;
-  } catch (error) {
-    console.warn(
-      "[ServerAuth] Failed to read session token from cookies:",
-      error
-    );
+  } catch {
     return null;
   }
 }
@@ -89,16 +66,11 @@ export async function getAuthenticatedUserId(): Promise<Id<"users"> | null> {
     });
 
     if (session && session.expires > Date.now()) {
-      console.log(
-        `[ServerAuth] Valid session found for user: ${session.userId}`
-      );
       return session.userId;
     }
 
-    console.log("[ServerAuth] Session expired or not found");
     return null;
-  } catch (error) {
-    console.warn("[ServerAuth] Failed to get user from session token:", error);
+  } catch {
     return null;
   }
 }
