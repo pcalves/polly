@@ -270,8 +270,8 @@ export function PersonaForm({
                   <div className="absolute inset-0 bg-gradient-to-br from-transparent via-background/50 to-transparent animate-pulse" />
                   <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center">
                     <div className="inline-flex items-center gap-2 px-4 py-2 bg-background/90 backdrop-blur-sm rounded-full border border-border/50 shadow-lg">
-                      <Loader2 className="h-4 w-4 animate-spin text-accent-emerald" />
-                      <span className="text-sm font-medium bg-gradient-to-r from-accent-emerald via-accent-orange to-accent-purple bg-clip-text text-transparent">
+                      <Loader2 className="h-4 w-4 animate-spin text-accent-coral" />
+                      <span className="text-sm font-medium bg-gradient-to-r from-accent-coral via-accent-orange to-accent-purple bg-clip-text text-transparent">
                         AI magic in progress...
                       </span>
                     </div>
@@ -341,7 +341,7 @@ export function PersonaForm({
               size="sm"
               onClick={improvePrompt}
               disabled={!promptValue.trim() || isImprovingPrompt}
-              className="p-0 h-auto text-xs text-accent-emerald hover:text-accent-emerald/80 underline"
+              className="p-0 h-auto text-xs text-accent-coral hover:text-accent-coral/80 underline"
             >
               improve prompt
             </Button>{" "}
@@ -351,7 +351,7 @@ export function PersonaForm({
               href="https://docs.anthropic.com/en/docs/build-with-claude/prompt-engineering/system-prompts"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-accent-emerald hover:text-accent-emerald/80 transition-colors underline"
+              className="text-accent-coral hover:text-accent-coral/80 transition-colors underline"
             >
               Check out this system prompts guide
             </a>{" "}
@@ -477,8 +477,8 @@ export function PersonaForm({
                   />
                   <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center">
                     <div className="inline-flex items-center gap-2 px-4 py-2 bg-background/90 backdrop-blur-sm rounded-full border border-border/50 shadow-lg">
-                      <Loader2 className="h-4 w-4 animate-spin text-accent-emerald" />
-                      <span className="text-sm font-medium bg-gradient-to-r from-accent-emerald via-accent-orange to-accent-purple bg-clip-text text-transparent">
+                      <Loader2 className="h-4 w-4 animate-spin text-accent-coral" />
+                      <span className="text-sm font-medium bg-gradient-to-r from-accent-coral via-accent-orange to-accent-purple bg-clip-text text-transparent">
                         AI magic in progress...
                       </span>
                     </div>

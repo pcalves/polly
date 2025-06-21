@@ -6,7 +6,6 @@ import React, {
   useReducer,
   useDeferredValue,
   useTransition,
-  Suspense,
 } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -23,21 +22,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useDebounce } from "@/hooks/use-debounce";
-import dynamic from "next/dynamic";
+import { VirtualizedModelList } from "../virtualized-model-list";
 import { SettingsHeader } from "./settings-header";
 import { useUser } from "@/hooks/use-user";
-
-// Dynamically import heavy components
-const VirtualizedModelList = dynamic(
-  () =>
-    import("../virtualized-model-list").then(mod => ({
-      default: mod.VirtualizedModelList,
-    })),
-  {
-    loading: () => <ModelListSkeleton />,
-    ssr: false,
-  }
-);
 
 const PROVIDER_NAMES = {
   openai: "OpenAI",
@@ -46,7 +33,6 @@ const PROVIDER_NAMES = {
   openrouter: "OpenRouter",
 } as const;
 
-// Available capability filters
 const CAPABILITY_FILTERS = [
   {
     key: "supportsReasoning",
@@ -77,7 +63,6 @@ const CAPABILITY_FILTERS = [
   { key: "latest", label: "Latest", description: "Newest model version" },
 ] as const;
 
-// State management with useReducer for better performance
 interface FilterState {
   searchQuery: string;
   selectedProviders: string[];
@@ -134,7 +119,6 @@ function filterReducer(state: FilterState, action: FilterAction): FilterState {
   }
 }
 
-// Memoized provider summary card component
 const ProviderSummaryCard = React.memo(
   ({
     provider,
@@ -150,7 +134,7 @@ const ProviderSummaryCard = React.memo(
     <div
       className={`p-4 rounded-lg border transition-all duration-200 cursor-pointer hover:shadow-sm ${
         isSelected
-          ? "border-emerald-200 bg-emerald-50 hover:bg-emerald-100"
+          ? "border-primary bg-primary/5 hover:bg-primary/10"
           : "border-border bg-card hover:bg-muted/50"
       }`}
       onClick={() => onToggle(provider)}
@@ -166,18 +150,15 @@ const ProviderSummaryCard = React.memo(
                 {PROVIDER_NAMES[provider as keyof typeof PROVIDER_NAMES]}
               </h3>
               {isSelected && (
-                <span className="text-xs text-emerald-600 font-medium bg-emerald-100 px-2 py-0.5 rounded-full shrink-0">
+                <span className="text-xs text-primary font-medium bg-primary/10 px-2 py-0.5 rounded-full shrink-0">
                   Filtered
                 </span>
               )}
             </div>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-muted-foreground m-0">
               {count} model{count !== 1 ? "s" : ""} available
             </p>
           </div>
-        </div>
-        <div className="text-2xl font-bold text-primary shrink-0 ml-2">
-          {count}
         </div>
       </div>
     </div>
@@ -186,111 +167,65 @@ const ProviderSummaryCard = React.memo(
 
 ProviderSummaryCard.displayName = "ProviderSummaryCard";
 
-// Memoized filter tag component
+const ProviderSummaryCardSkeleton = React.memo(() => (
+  <div className="p-4 rounded-lg border bg-card">
+    <div className="flex items-center justify-between">
+      <div className="flex items-center gap-3 flex-1 min-w-0">
+        <div className="w-8 h-8 rounded bg-muted animate-pulse shrink-0" />
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-1">
+            <div className="h-6 bg-muted rounded animate-pulse w-20 mb-2" />
+          </div>
+          <div className="h-3 bg-muted rounded animate-pulse w-24" />
+        </div>
+      </div>
+    </div>
+  </div>
+));
+
+ProviderSummaryCardSkeleton.displayName = "ProviderSummaryCardSkeleton";
+
 const FilterTag = React.memo(
   ({
     children,
     className,
+    onClick,
   }: {
     children: React.ReactNode;
     className?: string;
+    onClick?: () => void;
   }) => (
-    <span
-      className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs ${className}`}
+    <button
+      className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs transition-all hover:opacity-80 hover:scale-95 cursor-pointer hover:shadow-sm ${className}`}
+      onClick={onClick}
+      type="button"
+      title="Click to remove filter"
     >
       {children}
-    </span>
+      <span className="ml-1 opacity-60 hover:opacity-100 text-xs">×</span>
+    </button>
   )
 );
 
 FilterTag.displayName = "FilterTag";
 
-// Enhanced loading component with progress status
-const ModelsLoadingState = React.memo(
-  ({
-    status,
-    availableProviders,
-  }: {
-    status: string;
-    availableProviders: string[];
-  }) => (
-    <div className="space-y-6">
-      {/* Loading header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-lg font-semibold mb-2">Models</h2>
-          <p className="text-sm text-muted-foreground">
-            Loading models from your configured providers...
-          </p>
-        </div>
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Loader2 className="h-4 w-4 animate-spin text-gradient-from" />
-          {status || "Loading..."}
-        </div>
-      </div>
-
-      {/* Provider loading cards */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
-        {availableProviders.map((provider, index) => (
-          <div
-            key={provider}
-            className="p-4 rounded-lg border bg-gradient-to-r from-primary/5 to-primary/10 animate-pulse"
-            style={{
-              animationDelay: `${index * 150}ms`,
-              animationDuration: "2s",
-            }}
-          >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3 flex-1 min-w-0">
-                <div className="w-8 h-8 flex items-center justify-center shrink-0">
-                  <ProviderIcon provider={provider} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <h3 className="text-base font-medium">
-                      {PROVIDER_NAMES[provider as keyof typeof PROVIDER_NAMES]}
-                    </h3>
-                    <div className="flex items-center gap-1">
-                      <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
-                      <span className="text-xs text-emerald-600 font-medium">
-                        Loading
-                      </span>
-                    </div>
-                  </div>
-                  <div className="h-3 bg-muted/30 rounded w-20 animate-pulse" />
-                </div>
-              </div>
-              <div className="shrink-0 ml-2">
-                <Loader2 className="h-5 w-5 animate-spin text-primary" />
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Skeleton model cards with shimmer */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <p className="text-sm text-muted-foreground">
-            {status || "Loading models..."}
-          </p>
-        </div>
-        <ModelListSkeletonWithShimmer />
+// Single simple loading state
+function LoadingState({ message }: { message: string }) {
+  return (
+    <div className="flex items-center justify-center py-20">
+      <div className="text-center space-y-4">
+        <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
+        <p className="text-sm text-muted-foreground">{message}</p>
       </div>
     </div>
-  )
-);
-
-ModelsLoadingState.displayName = "ModelsLoadingState";
+  );
+}
 
 export function ModelsTab() {
   const [filterState, dispatch] = useReducer(filterReducer, initialFilterState);
   const [isPending, startTransition] = useTransition();
 
-  // Use deferred value for search to improve typing performance
   const deferredSearchQuery = useDeferredValue(filterState.searchQuery);
-
-  // Debounce the entire filter state
   const debouncedFilters = useDebounce(
     {
       ...filterState,
@@ -300,14 +235,12 @@ export function ModelsTab() {
   );
 
   const { user } = useUser();
-  // Get API keys and enabled models from Convex
   const apiKeys = useQuery(api.apiKeys.getUserApiKeys);
   const enabledModels = useQuery(
     api.userModels.getUserModels,
     !user?.isAnonymous && user?._id ? { userId: user._id } : {}
   );
 
-  // Memoize expensive computations
   const availableProviders = useMemo(
     () => apiKeys?.filter(key => key.hasKey).map(key => key.provider) || [],
     [apiKeys]
@@ -318,7 +251,6 @@ export function ModelsTab() {
     [enabledModels]
   );
 
-  // Use Convex action directly for fetching models
   const fetchAllModels = useAction(api.models.fetchAllModels);
   const [allModels, setAllModels] = React.useState<
     Array<{
@@ -332,22 +264,18 @@ export function ModelsTab() {
       supportsFiles: boolean;
     }>
   >([]);
-  const [modelsLoading, setModelsLoading] = React.useState(false);
-  const [modelsError, setModelsError] = React.useState<Error | null>(null);
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [error, setError] = React.useState<Error | null>(null);
 
-  const [loadingStatus, setLoadingStatus] = React.useState<string>("");
-
-  // Fetch models when filters change
   React.useEffect(() => {
     const fetchModels = async () => {
       if (availableProviders.length === 0) return;
 
       try {
-        setModelsLoading(true);
-        setModelsError(null);
+        setIsLoading(true);
+        setError(null);
         const models = await fetchAllModels();
 
-        // Apply client-side filtering for search and capabilities
         let filteredModels = models;
 
         if (debouncedFilters.searchQuery) {
@@ -388,16 +316,15 @@ export function ModelsTab() {
         setAllModels(filteredModels);
       } catch (error) {
         console.error("Failed to fetch models:", error);
-        setModelsError(error as Error);
+        setError(error as Error);
       } finally {
-        setModelsLoading(false);
+        setIsLoading(false);
       }
     };
 
     fetchModels();
   }, [fetchAllModels, availableProviders, debouncedFilters]);
 
-  // Filter models client-side for "selected only" to avoid refetch
   const models = useMemo(() => {
     if (!debouncedFilters.showOnlySelected) {
       return allModels;
@@ -405,7 +332,6 @@ export function ModelsTab() {
     return allModels.filter(model => enabledModelIds.includes(model.modelId));
   }, [allModels, debouncedFilters.showOnlySelected, enabledModelIds]);
 
-  // Calculate stats from the models data
   const stats = useMemo(() => {
     if (!allModels.length) return null;
 
@@ -433,7 +359,6 @@ export function ModelsTab() {
     return { providerCounts, capabilityCounts };
   }, [allModels]);
 
-  // Memoized event handlers with useTransition for non-urgent updates
   const handleSearchChange = useCallback((value: string) => {
     dispatch({ type: "SET_SEARCH", payload: value });
   }, []);
@@ -474,69 +399,44 @@ export function ModelsTab() {
     });
   }, []);
 
-  // Refresh handler
+  const handleRemoveSearchFilter = useCallback(() => {
+    dispatch({ type: "SET_SEARCH", payload: "" });
+  }, []);
+
+  const handleRemoveSelectedFilter = useCallback(() => {
+    startTransition(() => {
+      dispatch({ type: "TOGGLE_SHOW_SELECTED" });
+    });
+  }, []);
+
+  const handleRemoveProviderFilter = useCallback((provider: string) => {
+    startTransition(() => {
+      dispatch({ type: "TOGGLE_PROVIDER", payload: provider });
+    });
+  }, []);
+
+  const handleRemoveCapabilityFilter = useCallback((capability: string) => {
+    startTransition(() => {
+      dispatch({ type: "TOGGLE_CAPABILITY", payload: capability });
+    });
+  }, []);
+
   const handleRefresh = useCallback(async () => {
     if (availableProviders.length === 0) return;
 
     try {
-      setModelsLoading(true);
-      setModelsError(null);
-      setLoadingStatus(
-        `Refreshing models from ${availableProviders.length} provider${availableProviders.length !== 1 ? "s" : ""}...`
-      );
-
+      setIsLoading(true);
+      setError(null);
       const models = await fetchAllModels();
-
-      // Apply client-side filtering for search and capabilities
-      let filteredModels = models;
-
-      if (debouncedFilters.searchQuery) {
-        const searchLower = debouncedFilters.searchQuery.toLowerCase();
-        filteredModels = filteredModels.filter(
-          model =>
-            model.modelId.toLowerCase().includes(searchLower) ||
-            model.name.toLowerCase().includes(searchLower) ||
-            model.provider.toLowerCase().includes(searchLower)
-        );
-      }
-
-      if (debouncedFilters.selectedProviders.length > 0) {
-        filteredModels = filteredModels.filter(model =>
-          debouncedFilters.selectedProviders.includes(model.provider)
-        );
-      }
-
-      if (debouncedFilters.selectedCapabilities.length > 0) {
-        filteredModels = filteredModels.filter(model =>
-          debouncedFilters.selectedCapabilities.every(capability => {
-            switch (capability) {
-              case "supportsReasoning":
-                return model.supportsReasoning;
-              case "supportsImages":
-                return model.supportsImages;
-              case "supportsTools":
-                return model.supportsTools;
-              case "supportsFiles":
-                return model.supportsFiles;
-              default:
-                return false;
-            }
-          })
-        );
-      }
-
-      setLoadingStatus("Finalizing...");
-      setAllModels(filteredModels);
+      setAllModels(models);
     } catch (error) {
       console.error("Failed to refresh models:", error);
-      setModelsError(error as Error);
+      setError(error as Error);
     } finally {
-      setModelsLoading(false);
-      setLoadingStatus("");
+      setIsLoading(false);
     }
-  }, [fetchAllModels, availableProviders, debouncedFilters]);
+  }, [fetchAllModels, availableProviders]);
 
-  // Memoize filter conditions to prevent recalculation
   const hasActiveFilters = useMemo(
     () =>
       filterState.searchQuery ||
@@ -546,17 +446,10 @@ export function ModelsTab() {
     [filterState]
   );
 
-  // Show loading state while API keys are loading
   if (apiKeys === undefined) {
-    return (
-      <ModelsLoadingState
-        status="Loading API keys..."
-        availableProviders={[]}
-      />
-    );
+    return <LoadingState message="Loading API keys..." />;
   }
 
-  // Show state when no API keys are configured
   if (availableProviders.length === 0) {
     return (
       <div className="space-y-6">
@@ -586,23 +479,20 @@ export function ModelsTab() {
         />
         <Button
           onClick={handleRefresh}
-          disabled={modelsLoading}
+          disabled={isLoading}
           size="sm"
           variant="outline"
           className="gap-2 shrink-0"
         >
-          <RefreshCw
-            className={`h-4 w-4 ${modelsLoading ? "animate-spin" : ""}`}
-          />
+          <RefreshCw className="h-4 w-4" />
           Refresh
         </Button>
       </div>
 
-      {/* Error State */}
-      {modelsError && (
+      {error && (
         <div className="p-4 rounded-lg border border-red-200 bg-red-50 text-red-700">
           <p className="font-medium">Error loading models</p>
-          <p className="text-sm">{modelsError.message}</p>
+          <p className="text-sm">{error.message}</p>
           <Button
             onClick={handleRefresh}
             size="sm"
@@ -614,25 +504,40 @@ export function ModelsTab() {
         </div>
       )}
 
-      {/* Provider Summary Cards */}
-      {stats?.providerCounts &&
+      {isLoading && availableProviders.length > 0 ? (
+        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+          {availableProviders.map(provider => (
+            <ProviderSummaryCardSkeleton key={provider} />
+          ))}
+        </div>
+      ) : (
+        stats?.providerCounts &&
         Object.keys(stats.providerCounts).length > 0 && (
           <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
-            {Object.entries(stats.providerCounts).map(([provider, count]) => (
-              <ProviderSummaryCard
-                key={provider}
-                provider={provider}
-                count={count}
-                isSelected={filterState.selectedProviders.includes(provider)}
-                onToggle={handleProviderToggle}
-              />
-            ))}
+            {Object.entries(stats.providerCounts)
+              .sort(([a], [b]) => {
+                const providerOrder = Object.keys(PROVIDER_NAMES);
+                const aIndex = providerOrder.indexOf(a);
+                const bIndex = providerOrder.indexOf(b);
+                if (aIndex === -1 && bIndex === -1) return a.localeCompare(b);
+                if (aIndex === -1) return 1;
+                if (bIndex === -1) return -1;
+                return aIndex - bIndex;
+              })
+              .map(([provider, count]) => (
+                <ProviderSummaryCard
+                  key={provider}
+                  provider={provider}
+                  count={count}
+                  isSelected={filterState.selectedProviders.includes(provider)}
+                  onToggle={handleProviderToggle}
+                />
+              ))}
           </div>
-        )}
+        )
+      )}
 
-      {/* Search and Filters */}
       <div className="space-y-4">
-        {/* Search and Filter Controls */}
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1 min-w-0">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -644,9 +549,7 @@ export function ModelsTab() {
             />
           </div>
 
-          {/* Filter Controls */}
           <div className="flex gap-2 shrink-0">
-            {/* Selected Filter Toggle */}
             <Button
               variant={filterState.showOnlySelected ? "default" : "outline"}
               onClick={handleShowSelectedToggle}
@@ -662,7 +565,6 @@ export function ModelsTab() {
               )}
             </Button>
 
-            {/* Provider Filter Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
@@ -729,7 +631,6 @@ export function ModelsTab() {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            {/* Capabilities Filter Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
@@ -797,7 +698,6 @@ export function ModelsTab() {
           </div>
         </div>
 
-        {/* Active Filters */}
         {hasActiveFilters && (
           <div className="flex items-start gap-2 flex-wrap">
             <span className="text-sm text-muted-foreground shrink-0 mt-1">
@@ -805,19 +705,26 @@ export function ModelsTab() {
             </span>
             <div className="flex flex-wrap items-center gap-2">
               {filterState.searchQuery && (
-                <FilterTag className="bg-muted">
+                <FilterTag
+                  className="bg-secondary text-secondary-foreground"
+                  onClick={handleRemoveSearchFilter}
+                >
                   Search: &ldquo;{filterState.searchQuery}&rdquo;
                 </FilterTag>
               )}
               {filterState.showOnlySelected && (
-                <FilterTag className="bg-primary text-primary-foreground">
+                <FilterTag
+                  className="bg-secondary text-secondary-foreground"
+                  onClick={handleRemoveSelectedFilter}
+                >
                   Selected only
                 </FilterTag>
               )}
               {filterState.selectedProviders.map(provider => (
                 <FilterTag
                   key={provider}
-                  className="bg-emerald-100 text-emerald-700"
+                  className="bg-secondary text-secondary-foreground"
+                  onClick={() => handleRemoveProviderFilter(provider)}
                 >
                   <div className="w-3 h-3 flex items-center justify-center">
                     <ProviderIcon provider={provider} />
@@ -834,7 +741,8 @@ export function ModelsTab() {
                 return (
                   <FilterTag
                     key={capability}
-                    className="bg-blue-100 text-blue-700"
+                    className="bg-secondary text-secondary-foreground"
+                    onClick={() => handleRemoveCapabilityFilter(capability)}
                   >
                     <span className="truncate max-w-[120px]">
                       {capabilityInfo?.label}
@@ -856,33 +764,25 @@ export function ModelsTab() {
         )}
       </div>
 
-      {/* Models List */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <p className="text-sm text-muted-foreground">
             {models.length} model{models.length !== 1 ? "s" : ""}{" "}
             {hasActiveFilters ? "matching filters" : "available"}
           </p>
-          {(modelsLoading || isPending) && (
+          {isPending && !isLoading && (
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Loader2 className="h-4 w-4 animate-spin" />
-              {isPending ? "Updating filters..." : "Loading..."}
+              Updating filters...
             </div>
           )}
         </div>
 
-        {models.length > 0 ? (
-          <div className="space-y-4">
-            <Suspense fallback={<ModelListSkeleton />}>
-              <VirtualizedModelList models={models} />
-            </Suspense>
-          </div>
-        ) : modelsLoading ? (
-          <ModelsLoadingState
-            status={loadingStatus}
-            availableProviders={availableProviders}
-          />
-        ) : models.length === 0 ? (
+        {isLoading ? (
+          <LoadingState message="Loading models..." />
+        ) : models.length > 0 ? (
+          <VirtualizedModelList models={models} />
+        ) : (
           <div className="flex items-center justify-center py-20">
             <div className="text-center space-y-4 max-w-md">
               <div className="text-6xl mb-4 opacity-20">🔍</div>
@@ -906,91 +806,7 @@ export function ModelsTab() {
               )}
             </div>
           </div>
-        ) : null}
-      </div>
-    </div>
-  );
-}
-
-function ModelListSkeleton() {
-  return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-      {Array.from({ length: 12 }).map((_, i) => (
-        <ModelCardSkeleton key={i} />
-      ))}
-    </div>
-  );
-}
-
-function ModelListSkeletonWithShimmer() {
-  return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-      {Array.from({ length: 12 }).map((_, i) => (
-        <ModelCardSkeletonWithShimmer key={i} delay={i * 100} />
-      ))}
-    </div>
-  );
-}
-
-function ModelCardSkeleton() {
-  return (
-    <div className="relative p-4 rounded-lg border border-muted/20 h-[150px] animate-pulse">
-      <div className="flex items-start justify-between mb-3">
-        <div className="flex-1 min-w-0 pr-2">
-          <div className="h-4 bg-muted/20 rounded mb-2 w-3/4" />
-          <div className="mt-1 flex items-center">
-            <div className="w-4 h-4 bg-muted/20 rounded" />
-          </div>
-        </div>
-        <div className="flex items-center gap-2 shrink-0">
-          <div className="h-5 w-9 bg-muted/20 rounded-full" />
-        </div>
-      </div>
-
-      <div className="flex items-center gap-1 mb-3">
-        {[1, 2, 3, 4].map(i => (
-          <div key={i} className="w-6 h-6 bg-muted/20 rounded" />
-        ))}
-      </div>
-
-      <div className="flex items-center justify-between text-xs">
-        <div className="h-3 bg-muted/20 rounded w-16" />
-        <div className="h-3 bg-muted/20 rounded w-12" />
-      </div>
-    </div>
-  );
-}
-
-function ModelCardSkeletonWithShimmer({ delay = 0 }: { delay?: number }) {
-  return (
-    <div
-      className="relative p-4 rounded-lg border border-muted/20 h-[150px] overflow-hidden"
-      style={{ animationDelay: `${delay}ms` }}
-    >
-      {/* Shimmer overlay */}
-      <div className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/10 to-transparent" />
-
-      <div className="flex items-start justify-between mb-3">
-        <div className="flex-1 min-w-0 pr-2">
-          <div className="h-4 bg-muted/20 rounded mb-2 w-3/4" />
-          <div className="mt-1 flex items-center">
-            <div className="w-4 h-4 bg-muted/20 rounded" />
-          </div>
-        </div>
-        <div className="flex items-center gap-2 shrink-0">
-          <div className="h-5 w-9 bg-muted/20 rounded-full" />
-        </div>
-      </div>
-
-      <div className="flex items-center gap-1 mb-3">
-        {[1, 2, 3, 4].map(i => (
-          <div key={i} className="w-6 h-6 bg-muted/20 rounded" />
-        ))}
-      </div>
-
-      <div className="flex items-center justify-between text-xs">
-        <div className="h-3 bg-muted/20 rounded w-16" />
-        <div className="h-3 bg-muted/20 rounded w-12" />
+        )}
       </div>
     </div>
   );

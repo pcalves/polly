@@ -236,7 +236,7 @@ export default function SettingsLayout({
                         <div className="flex items-center space-x-2">
                           <MessageSquare
                             className="h-3.5 w-3.5"
-                            style={{ color: "hsl(var(--accent-emerald))" }}
+                            style={{ color: "hsl(var(--accent-coral))" }}
                           />
                           <span className="text-foreground text-xs">
                             Total Messages

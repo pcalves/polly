@@ -88,7 +88,7 @@ export function ModelCard({ model }: ModelCardProps) {
               {model.free && (
                 <Badge
                   variant="secondary"
-                  className="text-[10px] px-1.5 py-0 h-5 bg-emerald-100 text-emerald-700 border-emerald-200 hover:bg-emerald-100 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-800 shrink-0"
+                  className="text-[10px] px-1.5 py-0 h-5 bg-coral-100 text-coral-700 border-coral-200 hover:bg-coral-100 dark:bg-coral-950 dark:text-coral-300 dark:border-coral-800 shrink-0"
                 >
                   Free
                 </Badge>

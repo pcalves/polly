@@ -52,7 +52,7 @@ function getProviderCardStyle(provider: string, isConnected: boolean) {
   const baseStyle = "p-4 rounded-lg border transition-all duration-200";
 
   if (isConnected) {
-    return `${baseStyle} border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/30 hover:bg-emerald-100 dark:hover:bg-emerald-950/50`;
+    return `${baseStyle} border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-950/30 hover:bg-green-100 dark:hover:bg-green-950/50`;
   }
 
   return `${baseStyle} border-border bg-card hover:bg-muted/50`;
@@ -203,7 +203,7 @@ export function ApiKeysTab() {
                         {info.name}
                       </Label>
                       {isConnected && (
-                        <span className="text-xs text-emerald-700 dark:text-emerald-300 font-medium bg-emerald-100 dark:bg-emerald-900/70 px-2 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800">
+                        <span className="text-xs text-green-700 dark:text-green-300 font-medium bg-green-100 dark:bg-green-900/30 px-2 py-0.5 rounded-full border border-green-200 dark:border-green-800/50">
                           Connected
                         </span>
                       )}

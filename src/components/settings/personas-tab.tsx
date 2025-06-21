@@ -101,7 +101,7 @@ export function PersonasTab() {
           />
           <div className="flex gap-2 shrink-0">
             <Link href="/settings/personas/new">
-              <Button variant="emerald">Create Persona</Button>
+              <Button variant="coral">Create Persona</Button>
             </Link>
           </div>
         </div>
@@ -218,7 +218,7 @@ export function PersonasTab() {
                                   View system prompt
                                 </TooltipContent>
                               </Tooltip>
-                              <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
+                              <DialogContent className="sm:max-w-2xl max-h-[90vh] sm:max-h-[80vh] overflow-hidden flex flex-col">
                                 <DialogHeader>
                                   <DialogTitle className="flex items-center gap-2">
                                     <span className="text-lg">

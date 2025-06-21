@@ -146,7 +146,7 @@ export default function EditPersonaPage() {
           Cancel
         </Button>
         <Button
-          variant="default"
+          variant="emerald"
           size="default"
           onClick={handleUpdatePersona}
           disabled={!isFormValid || isLoading}
