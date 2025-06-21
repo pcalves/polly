@@ -1,19 +1,12 @@
 "use client";
 
-import { User, LogOut, LogIn } from "lucide-react";
-import { useAuthActions, useAuthToken } from "@convex-dev/auth/react";
+import { User, LogIn } from "lucide-react";
+import { useAuthToken } from "@convex-dev/auth/react";
 import { useQuery } from "convex/react";
-import { useRouter } from "next/navigation";
-import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { api } from "../../../convex/_generated/api";
 import Image from "next/image";
+import Link from "next/link";
 
 interface UserSectionContentProps {
   user:
@@ -32,99 +25,61 @@ interface UserSectionContentProps {
     | null
     | undefined;
   token: string | null | undefined;
-  authActions: ReturnType<typeof useAuthActions>;
-  router: ReturnType<typeof useRouter>;
 }
 
-function UserSectionContent({
-  user,
-  token,
-  authActions,
-  router,
-}: UserSectionContentProps) {
-  const queryClient = useQueryClient();
-
-  const handleSignOut = async () => {
-    if (authActions?.signOut) {
-      queryClient.clear();
-      await authActions.signOut();
-    }
-  };
-
-  const handleSignIn = () => {
-    router.push("/auth");
-  };
-
+function UserSectionContent({ user, token }: UserSectionContentProps) {
   if (!token || !user) {
     return (
-      <div className="p-6 flex-shrink-0">
+      <Link href="/auth" className="block w-full px-4 py-6">
         <Button
-          onClick={handleSignIn}
           variant="ghost"
           className="w-full flex items-center justify-start gap-3 text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
         >
           <LogIn className="h-4 w-4" />
           Sign In
         </Button>
-      </div>
+      </Link>
     );
   }
 
   return (
-    <div className="p-6 flex-shrink-0">
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button
-            variant="ghost"
-            className="w-full justify-start gap-3 text-sm text-muted-foreground hover:text-foreground"
-          >
-            {user.image ? (
-              <Image
-                src={user.image}
-                alt={user.name || "User avatar"}
-                width={24}
-                height={24}
-                className="w-6 h-6 rounded-full object-cover"
-                unoptimized
-                onError={e => {
-                  const target = e.target as HTMLImageElement;
-                  target.style.display = "none";
-                  const fallback = target.nextElementSibling as HTMLElement;
-                  if (fallback) {
-                    fallback.style.display = "flex";
-                  }
-                }}
-              />
-            ) : (
-              <div className="w-6 h-6 rounded-full bg-gradient-tropical flex items-center justify-center">
-                <User className="h-3 w-3 text-white" />
-              </div>
-            )}
-            {user.image && (
-              <div className="w-6 h-6 rounded-full bg-gradient-tropical items-center justify-center hidden">
-                <User className="h-3 w-3 text-white" />
-              </div>
-            )}
-            <span className="truncate">
-              {user.name || user.email || "User"}
-            </span>
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" className="w-56">
-          <DropdownMenuItem onClick={handleSignOut}>
-            <LogOut className="mr-2 h-4 w-4" />
-            Sign Out
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-    </div>
+    <Link href="/settings" className="block w-full px-4 py-2">
+      <Button variant="ghost" className="w-full py-6 justify-start gap-3">
+        {user.image ? (
+          <Image
+            src={user.image}
+            alt={user.name || "User avatar"}
+            width={24}
+            height={24}
+            className="w-6 h-6 rounded-full object-cover"
+            unoptimized
+            onError={e => {
+              const target = e.target as HTMLImageElement;
+              target.style.display = "none";
+              const fallback = target.nextElementSibling as HTMLElement;
+              if (fallback) {
+                fallback.style.display = "flex";
+              }
+            }}
+          />
+        ) : (
+          <div className="w-6 h-6 rounded-full bg-gradient-tropical flex items-center justify-center">
+            <User className="h-3 w-3 text-white" />
+          </div>
+        )}
+        {user.image && (
+          <div className="w-6 h-6 rounded-full bg-gradient-tropical items-center justify-center hidden">
+            <User className="h-3 w-3 text-white" />
+          </div>
+        )}
+        <span className="truncate">{user.name || user.email || "User"}</span>
+      </Button>
+    </Link>
   );
 }
 
 export function UserSection() {
-  const router = useRouter();
   const token = useAuthToken();
-  const authActions = useAuthActions();
   const user = useQuery(api.users.getCurrentUser);
 
   if (token === undefined && user === undefined) {
@@ -140,12 +95,5 @@ export function UserSection() {
     );
   }
 
-  return (
-    <UserSectionContent
-      user={user}
-      token={token}
-      authActions={authActions}
-      router={router}
-    />
-  );
+  return <UserSectionContent user={user} token={token} />;
 }
