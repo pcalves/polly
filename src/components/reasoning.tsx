@@ -1,27 +1,29 @@
 "use client";
 
-import { useRef, useEffect } from "react";
-import { EnhancedMarkdown } from "@/components/ui/enhanced-markdown";
+import { useRef, useEffect, useState } from "react";
 import { Spinner } from "@/components/spinner";
+import Markdown from "react-markdown";
 
 interface ReasoningProps {
   reasoning: string;
   isLoading: boolean;
-  isExpanded: boolean;
-  onToggle: () => void;
-  tokenCount?: number;
 }
 
-export function Reasoning({
-  reasoning,
-  isLoading,
-  isExpanded,
-  onToggle,
-  tokenCount,
-}: ReasoningProps) {
+export function Reasoning({ reasoning, isLoading }: ReasoningProps) {
+  const [isExpanded, setIsExpanded] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll to bottom during loading
+  // Auto-expand when streaming starts, auto-collapse when streaming ends
+  useEffect(() => {
+    if (isLoading) {
+      setIsExpanded(true);
+    } else {
+      // Auto-collapse when streaming finishes
+      setIsExpanded(false);
+    }
+  }, [isLoading]);
+
+  // Simplified scroll effect
   useEffect(() => {
     const element = contentRef.current;
     if (!element || !isExpanded) {
@@ -43,39 +45,21 @@ export function Reasoning({
     }
   }, [reasoning, isExpanded, isLoading]);
 
-  // Auto-expand when reasoning starts loading (only once per loading session)
-  const hasAutoExpanded = useRef(false);
-  
-  useEffect(() => {
-    if (isLoading && !isExpanded && !hasAutoExpanded.current) {
-      hasAutoExpanded.current = true;
-      onToggle();
-    } else if (!isLoading) {
-      hasAutoExpanded.current = false;
-    }
-  }, [isLoading, isExpanded, onToggle]);
-
-  // Only render if we have reasoning content or are loading
-  if (!reasoning && !isLoading) {
-    return null;
-  }
-
-  // Don't render until we have actual reasoning content
-  if (!reasoning.trim()) {
+  // Only render if we have actual reasoning content
+  if (!reasoning || !reasoning.trim()) {
     return null;
   }
 
   return (
     <div className="mt-2 w-full">
       <button
-        className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed group"
-        disabled={isLoading}
-        onClick={onToggle}
+        className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-all duration-200 group"
+        onClick={() => setIsExpanded(prev => !prev)}
       >
-        {/* Show spinner only when loading AND expanded */}
+        {/* Show spinner only when loading AND expanded (or about to expand) */}
         {isLoading && isExpanded && (
           <div className="scale-75">
-            <Spinner size="sm" />
+            <Spinner />
           </div>
         )}
         <span className="flex items-center gap-1.5">
@@ -114,11 +98,6 @@ export function Reasoning({
               Show reasoning
             </>
           )}
-          {tokenCount && (
-            <span className="ml-2 text-xs opacity-70">
-              ({tokenCount} tokens)
-            </span>
-          )}
         </span>
       </button>
 
@@ -127,54 +106,57 @@ export function Reasoning({
         className={`
           relative mt-2 border-l-2 border-muted/30 dark:border-l-muted/20
           pl-4 overflow-hidden transition-all duration-300 ease-in-out
-          max-w-[calc(100%-25%)]
+          w-full
           ${
             isLoading
               ? isExpanded
-                ? 'h-[150px] animate-pulse bg-muted/5'
-                : 'h-0 opacity-0'
+                ? "h-[150px] bg-muted/5"
+                : "h-0 opacity-0"
               : isExpanded
-                ? 'h-auto opacity-100 translate-y-0'
-                : 'h-0 opacity-0 -translate-y-2'
+                ? "h-auto opacity-100 translate-y-0"
+                : "h-0 opacity-0 -translate-y-2"
           }
         `}
       >
         {/* Inner scrollable content area */}
         <div
           ref={contentRef}
-          className="
+          className={`
             relative h-full overflow-y-auto
-            scrollbar-thin
+            scrollbar-none
+            [-ms-overflow-style:none]
+            [scrollbar-width:none]
+            [&::-webkit-scrollbar]:hidden
             scroll-smooth
             py-3
-            text-sm text-muted-foreground dark:text-muted-foreground/80
-          "
+            text-xs text-muted-foreground dark:text-muted-foreground/80
+          `}
         >
           <div
-            className="prose prose-sm dark:prose-invert max-w-none break-words prose-p:text-muted-foreground prose-headings:text-muted-foreground"
+            className="text-xs leading-relaxed text-muted-foreground/90 dark:text-muted-foreground/80 max-w-none break-words"
             style={{
-              wordBreak: 'break-word',
-              overflowWrap: 'break-word',
-              hyphens: 'auto',
+              wordBreak: "break-word",
+              overflowWrap: "break-word",
+              hyphens: "auto",
             }}
           >
-            <EnhancedMarkdown>{reasoning || ''}</EnhancedMarkdown>
+            <Markdown>{reasoning || ""}</Markdown>
             {/* Add a small spacer at the bottom for better scroll visibility */}
             {isLoading && <div className="h-4" />}
           </div>
         </div>
 
-        {/* Gradient fades for scrolling content (only during loading) */}
+        {/* Gradient overlays for focus effect (only during loading) */}
         {isLoading && isExpanded && (
           <>
-            {/* Top Fade */}
+            {/* Top fade - text fades out going up */}
             <div
-              className="absolute top-0 left-0 right-0 h-12 bg-gradient-to-t from-transparent via-background/50 to-background pointer-events-none z-10 opacity-100"
+              className="absolute top-0 left-0 right-0 h-6 bg-gradient-to-b from-background via-background/60 to-transparent pointer-events-none z-10"
               aria-hidden="true"
             />
-            {/* Bottom Fade */}
+            {/* Bottom fade - text fades out going down */}
             <div
-              className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-b from-transparent via-background/50 to-background pointer-events-none z-10 opacity-100"
+              className="absolute bottom-0 left-0 right-0 h-6 bg-gradient-to-t from-background via-background/60 to-transparent pointer-events-none z-10"
               aria-hidden="true"
             />
           </>

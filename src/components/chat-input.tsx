@@ -1,267 +1,413 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
-import { Send, Paperclip, X, Brain } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import React, {
+  useState,
+  useRef,
+  useEffect,
+  useCallback,
+  forwardRef,
+  useImperativeHandle,
+} from "react";
+import { X } from "lucide-react";
+import { NotificationDialog } from "@/components/ui/notification-dialog";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Attachment } from "@/types";
 import { cn } from "@/lib/utils";
-import { Attachment, ChatSettings } from "@/types";
-import { ModelPicker } from "@/components/model-picker";
+import { useQuery, usePreloadedQuery } from "convex/react";
+import { api } from "../../convex/_generated/api";
+
+import { ConvexFileDisplay } from "@/components/convex-file-display";
+import { useFileUpload } from "@/hooks/use-file-upload";
+import { AttachmentList } from "@/components/chat-input/attachment-list";
+import { InputControls } from "@/components/chat-input/input-controls";
+import { Id } from "../../convex/_generated/dataModel";
+import { useUser } from "@/hooks/use-user";
+import { useUserContext } from "@/providers/user-provider";
 
 interface ChatInputProps {
-  onSendMessage: (content: string, attachments?: Attachment[]) => void;
+  onSendMessage: (
+    content: string,
+    attachments?: Attachment[],
+    useWebSearch?: boolean,
+    personaId?: Id<"personas"> | null
+  ) => void;
+  onSendAsNewConversation?: (
+    content: string,
+    navigate: boolean,
+    attachments?: Attachment[],
+    contextSummary?: string,
+    personaId?: Id<"personas"> | null
+  ) => void;
   onInputStart?: () => void;
   isLoading?: boolean;
+  isStreaming?: boolean;
+  onStop?: () => void;
   placeholder?: string;
-  settings: ChatSettings;
-  onSettingsChange: (settings: ChatSettings) => void;
+  conversationId?: string;
+  hasExistingMessages?: boolean;
 }
 
-export function ChatInput({ 
-  onSendMessage, 
-  onInputStart,
-  isLoading = false, 
-  placeholder = "Type your message...",
-  settings,
-  onSettingsChange
-}: ChatInputProps) {
-  const [input, setInput] = useState("");
-  const [attachments, setAttachments] = useState<Attachment[]>([]);
-  const [hasStartedTyping, setHasStartedTyping] = useState(false);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+export interface ChatInputRef {
+  focus: () => void;
+  addQuote: (quote: string) => void;
+  setInput: (text: string) => void;
+}
 
-  useEffect(() => {
-    if (textareaRef.current) {
-      textareaRef.current.style.height = "auto";
-      textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
-    }
-  }, [input]);
+// Split component for preloaded data
+const ChatInputWithPreloadedData = forwardRef<ChatInputRef, ChatInputProps>(
+  (props, ref) => {
+    const userContext = useUserContext();
 
-  const handleSubmit = () => {
-    if (!input.trim() && attachments.length === 0) return;
-    if (isLoading) return;
+    // Use preloaded queries - these are safe because we know preloaded data exists
+    const hasEnabledModels = usePreloadedQuery(
+      userContext.preloadedUserModels!
+    );
+    const selectedModel = usePreloadedQuery(
+      userContext.preloadedSelectedModel!
+    );
+    const hasApiKeys = usePreloadedQuery(userContext.preloadedApiKeys!);
 
-    onSendMessage(input.trim(), attachments.length > 0 ? attachments : undefined);
-    setInput("");
-    setAttachments([]);
-  };
+    return (
+      <ChatInputCore
+        {...props}
+        ref={ref}
+        hasEnabledModels={hasEnabledModels}
+        selectedModel={selectedModel}
+        hasApiKeys={hasApiKeys}
+      />
+    );
+  }
+);
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSubmit();
-    }
-  };
+// Split component for query-based data
+const ChatInputWithQuery = forwardRef<ChatInputRef, ChatInputProps>(
+  (props, ref) => {
+    // Use regular queries for fallback
+    const hasEnabledModels = useQuery(api.userModels.hasUserModels, {});
+    const selectedModel = useQuery(api.userModels.getUserSelectedModel, {});
+    const hasApiKeys = useQuery(api.apiKeys.hasAnyApiKey, {});
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    
-    for (const file of files) {
-      if (file.type.startsWith("image/") || file.type === "application/pdf") {
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          const attachment: Attachment = {
-            type: file.type.startsWith("image/") ? "image" : "pdf",
-            url: event.target?.result as string,
-            name: file.name,
-            size: file.size,
-          };
-          setAttachments(prev => [...prev, attachment]);
-        };
-        reader.readAsDataURL(file);
+    return (
+      <ChatInputCore
+        {...props}
+        ref={ref}
+        hasEnabledModels={hasEnabledModels}
+        selectedModel={selectedModel}
+        hasApiKeys={hasApiKeys}
+      />
+    );
+  }
+);
+
+// Core component that contains all the logic
+interface ChatInputCoreProps extends ChatInputProps {
+  hasEnabledModels: boolean | undefined;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  selectedModel: any; // Type comes from getUserSelectedModel query - can be userModel or default model
+  hasApiKeys: boolean | undefined;
+}
+
+const ChatInputCore = forwardRef<ChatInputRef, ChatInputCoreProps>(
+  (
+    {
+      onSendMessage,
+      onSendAsNewConversation,
+      onInputStart,
+      isLoading = false,
+      isStreaming = false,
+      onStop,
+      placeholder = "Ask me anything...",
+      conversationId,
+      hasExistingMessages = false,
+      hasEnabledModels,
+      selectedModel,
+      hasApiKeys,
+    },
+    ref
+  ) => {
+    const [input, setInput] = useState("");
+    const [previewFile, setPreviewFile] = useState<Attachment | null>(null);
+    const [isLimitWarningDismissed, setIsLimitWarningDismissed] =
+      useState(false);
+
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
+    const inputControlsRef = useRef<{ handleSubmit: () => void } | null>(null);
+
+    // User and message limit info
+    const { messageCount, remainingMessages, hasMessageLimit, canSendMessage } =
+      useUser();
+
+    // Current model for capabilities checking
+    const currentModel = selectedModel
+      ? {
+          ...selectedModel,
+          contextLength: selectedModel.contextLength,
+          _id: selectedModel._id,
+          _creationTime: selectedModel._creationTime,
+          userId: selectedModel.userId,
+        }
+      : undefined;
+
+    // File upload hook
+    const {
+      attachments,
+      uploadProgress,
+      handleFileUpload,
+      removeAttachment,
+      clearAttachments,
+      buildMessageContent,
+      getBinaryAttachments,
+      notificationDialog,
+    } = useFileUpload({
+      currentModel,
+      conversationId,
+    });
+
+    // Clear input function
+    const clearInput = useCallback(() => {
+      setInput("");
+    }, []);
+
+    const addQuote = useCallback((quote: string) => {
+      setInput(prev => {
+        const currentValue = prev.trim();
+        if (currentValue) {
+          return `${currentValue}\n\n${quote}\n\n`;
+        }
+        return `${quote}\n\n`;
+      });
+
+      setTimeout(() => {
+        textareaRef.current?.focus();
+        if (textareaRef.current) {
+          const length = textareaRef.current.value.length;
+          textareaRef.current.setSelectionRange(length, length);
+        }
+      }, 0);
+    }, []);
+
+    useImperativeHandle(
+      ref,
+      () => ({
+        focus: () => {
+          textareaRef.current?.focus();
+        },
+        addQuote,
+        setInput,
+      }),
+      [addQuote]
+    );
+
+    // Auto-resize textarea
+    useEffect(() => {
+      if (textareaRef.current) {
+        textareaRef.current.style.height = "auto";
+        textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 100)}px`;
       }
-    }
-    
-    // Reset file input
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
-  };
+    }, [input]);
 
-  const removeAttachment = (index: number) => {
-    setAttachments(prev => prev.filter((_, i) => i !== index));
-  };
+    // Determine if user can chat - now only blocked by message limits
+    const canChat = canSendMessage;
 
-  const handleModelChange = (modelId: string) => {
-    // Determine the correct provider for this model
-    let provider = settings.provider;
-    
-    // Check if this is an OpenRouter model (from our curated list)
-    const openRouterModelIds = [
-      "google/gemini-2.5-flash-preview-05-20",
-      "google/gemini-2.5-pro-preview-05-06", 
-      "x-ai/grok-3-mini",
-      "deepseek/deepseek-v3",
-      "deepseek/deepseek-r1-0528"
-    ];
-    
-    if (openRouterModelIds.includes(modelId)) {
-      provider = "openrouter";
-    } else {
-      // Fallback: extract provider from model ID for non-OpenRouter models
-      const providerMap: { [key: string]: string } = {
-        "gpt": "openai",
-        "claude": "anthropic", 
-        "gemini": "google"
-      };
-      
-      for (const [key, value] of Object.entries(providerMap)) {
-        if (modelId.includes(key)) {
-          provider = value;
-          break;
+    // Handle form submission (Enter key)
+    const handleFormSubmit = useCallback((e: React.FormEvent) => {
+      e.preventDefault();
+      if (inputControlsRef.current?.handleSubmit) {
+        inputControlsRef.current.handleSubmit();
+      }
+    }, []);
+
+    // Handle textarea key down for Shift+Enter behavior
+    const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        // Manually trigger form submission
+        if (inputControlsRef.current?.handleSubmit) {
+          inputControlsRef.current.handleSubmit();
         }
       }
+      // Shift+Enter will naturally add a new line due to textarea behavior
+    }, []);
+
+    // Determine placeholder text
+    let placeholderText = placeholder;
+    if (!canSendMessage && hasMessageLimit) {
+      placeholderText =
+        "Message limit reached. Sign in to continue chatting...";
+    } else if (hasApiKeys === undefined || hasEnabledModels === undefined) {
+      placeholderText = "Loading...";
     }
-    
-    onSettingsChange({
-      ...settings,
-      model: modelId,
-      provider,
-    });
-  };
 
-  const toggleReasoning = () => {
-    onSettingsChange({
-      ...settings,
-      enableReasoning: !settings.enableReasoning
-    });
-  };
+    const showLimitWarning =
+      hasMessageLimit &&
+      messageCount > 0 &&
+      canSendMessage &&
+      !isLimitWarningDismissed;
+    const showLimitReached = hasMessageLimit && !canSendMessage;
 
+    // Reset dismissed state when messageCount changes (new message sent)
+    const prevMessageCountRef = useRef(messageCount);
+    useEffect(() => {
+      if (messageCount !== prevMessageCountRef.current) {
+        setIsLimitWarningDismissed(false);
+        prevMessageCountRef.current = messageCount;
+      }
+    }, [messageCount]);
 
-
-
-
-  return (
-    <div className="bg-background border-t border-border/30 relative">
-      {/* Main input container with Grok-style design */}
-      <div className="max-w-4xl mx-auto p-4">
-        {/* Attachments */}
-        {attachments.length > 0 && (
-          <div className="mb-3 flex flex-wrap gap-2">
-            {attachments.map((attachment, index) => (
-              <div
-                key={index}
-                className="flex items-center gap-2 rounded-full bg-muted/50 px-3 py-1.5 text-sm border border-border/30"
-              >
-                <span className="text-muted-foreground text-xs">
-                  {attachment.type === "image" ? "🖼️" : "📄"}
+    return (
+      <div className="p-6 relative">
+        <div className="max-w-3xl mx-auto">
+          {/* Message limit warning banner */}
+          {showLimitWarning && !showLimitReached && (
+            <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 z-10">
+              <div className="inline-flex items-center gap-2 p-2.5 rounded-md bg-amber-50 border border-amber-200 dark:bg-amber-900 dark:border-amber-800 transition-all duration-200 text-xs text-amber-800 dark:text-amber-200 shadow-lg">
+                <span>
+                  {remainingMessages} message
+                  {remainingMessages === 1 ? "" : "s"} remaining • Sign in for
+                  unlimited chats
                 </span>
-                <span className="max-w-[150px] truncate text-xs">{attachment.name}</span>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => removeAttachment(index)}
-                  className="h-4 w-4 p-0 hover:bg-destructive/20 hover:text-destructive rounded-full"
+                <button
+                  onClick={() => setIsLimitWarningDismissed(true)}
+                  className="p-0.5 hover:bg-amber-100/50 dark:hover:bg-amber-800/50 rounded transition-colors duration-150"
+                  aria-label="Dismiss"
                 >
-                  <X className="h-2.5 w-2.5" />
-                </Button>
+                  <X className="h-3.5 w-3.5 hover:opacity-80" />
+                </button>
               </div>
-            ))}
-          </div>
-        )}
-
-        {/* Main input area */}
-        <div className="relative rounded-2xl border border-border/40 bg-background/80 backdrop-blur-sm shadow-sm hover:border-border/60 focus-within:border-border/80 transition-all duration-200">
-          {/* Controls bar */}
-          <div className="flex items-center justify-between px-4 py-3 border-b border-border/30">
-            <div className="flex items-center gap-3">
-              {/* Model selector - using Select directly */}
-              <div className="min-w-[140px]">
-                <ModelPicker
-                  value={settings.model}
-                  onChange={handleModelChange}
-                />
-              </div>
-              
-              {/* Reasoning toggle - always visible */}
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={toggleReasoning}
-                className={cn(
-                  "h-8 px-3 rounded-lg text-xs font-medium transition-all duration-200 border",
-                  settings.enableReasoning 
-                    ? "bg-primary/10 text-primary hover:bg-primary/15 border-primary/30" 
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted/50 border-transparent hover:border-border/50"
-                )}
-              >
-                <Brain className="h-3.5 w-3.5 mr-1.5" />
-                Reasoning
-              </Button>
             </div>
-          </div>
+          )}
 
-          {/* Input container */}
-          <div className="flex items-end gap-3 p-4">
-            <div className="flex-1">
-              <textarea
-                ref={textareaRef}
-                value={input}
-                onChange={(e) => {
-                  const newValue = e.target.value;
-                  setInput(newValue);
-                  
-                  // Trigger conversation creation on first input
-                  if (!hasStartedTyping && newValue.trim() && onInputStart) {
-                    setHasStartedTyping(true);
-                    onInputStart();
-                  }
-                }}
-                onKeyDown={handleKeyDown}
-                placeholder={placeholder}
-                className={cn(
-                  "w-full min-h-[24px] max-h-[200px] resize-none",
-                  "border-0 bg-transparent px-0 py-0 outline-0 ring-0",
-                  "placeholder:text-muted-foreground/60 text-base leading-6",
-                  "focus:outline-0 focus:ring-0 focus:border-0"
-                )}
-                rows={1}
-                style={{ 
-                  border: 'none',
-                  outline: 'none',
-                  boxShadow: 'none'
-                }}
+          {/* Message limit reached banner */}
+          {showLimitReached && (
+            <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 z-10">
+              <div className="inline-flex items-center gap-2 p-2.5 rounded-md bg-red-50 border border-red-200 dark:bg-red-900 dark:border-red-800 transition-all duration-200 text-xs text-red-800 dark:text-red-200 shadow-lg">
+                <span>
+                  Message limit reached. Sign in to continue chatting without
+                  limits.
+                </span>
+              </div>
+            </div>
+          )}
+
+          <form onSubmit={handleFormSubmit}>
+            <div
+              className={cn(
+                "rounded-xl border p-3 shadow-lg ring-1 transition-all duration-300",
+                canChat
+                  ? "border-accent-emerald/30 bg-surface-primary ring-accent-emerald/10 hover:shadow-xl hover:ring-accent-emerald/20"
+                  : "border-border/30 bg-muted/50 ring-border/10"
+              )}
+            >
+              <AttachmentList
+                attachments={attachments}
+                uploadProgress={uploadProgress}
+                onRemoveAttachment={removeAttachment}
+                onPreviewFile={setPreviewFile}
+                canChat={canChat}
+              />
+
+              <div className="flex items-end gap-3">
+                <div className="flex-1 relative group">
+                  <textarea
+                    ref={textareaRef}
+                    value={input}
+                    onChange={e => setInput(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    placeholder={placeholderText}
+                    disabled={isLoading || !canChat}
+                    rows={1}
+                    className={cn(
+                      "w-full resize-none bg-transparent border-0 outline-none ring-0 focus:ring-0 text-sm leading-relaxed transition-opacity duration-200 min-h-[24px] max-h-[100px] overflow-y-auto",
+                      canChat
+                        ? "placeholder:text-muted-foreground/60"
+                        : "placeholder:text-muted-foreground cursor-not-allowed"
+                    )}
+                    style={{
+                      fontFamily: "inherit",
+                    }}
+                  />
+                </div>
+              </div>
+
+              <InputControls
+                ref={inputControlsRef}
+                canChat={canChat}
+                isLoading={isLoading}
+                isStreaming={isStreaming}
+                selectedModel={selectedModel}
+                currentModel={currentModel}
+                hasExistingMessages={hasExistingMessages}
+                conversationId={conversationId}
+                onStop={onStop}
+                hasApiKeys={hasApiKeys}
+                hasEnabledModels={hasEnabledModels}
+                input={input}
+                attachments={attachments}
+                buildMessageContent={buildMessageContent}
+                getBinaryAttachments={getBinaryAttachments}
+                clearAttachments={clearAttachments}
+                clearInput={clearInput}
+                handleFileUpload={handleFileUpload}
+                onSendMessage={onSendMessage}
+                onSendAsNewConversation={onSendAsNewConversation}
+                onInputStart={onInputStart}
               />
             </div>
-
-            {/* Action buttons */}
-            <div className="flex items-center gap-2">
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*,.pdf"
-                onChange={handleFileUpload}
-                multiple
-                className="hidden"
-              />
-              
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={isLoading}
-                className="h-8 w-8 p-0 rounded-lg hover:bg-muted/50 text-muted-foreground hover:text-foreground transition-all duration-200"
-              >
-                <Paperclip className="h-4 w-4" />
-              </Button>
-
-              <Button
-                onClick={handleSubmit}
-                disabled={(!input.trim() && attachments.length === 0) || isLoading}
-                size="sm"
-                className={cn(
-                  "h-8 w-8 p-0 rounded-lg transition-all duration-200",
-                  (!input.trim() && attachments.length === 0) || isLoading
-                    ? "bg-muted text-muted-foreground cursor-not-allowed hover:bg-muted"
-                    : "bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm hover:shadow-md hover:scale-105"
-                )}
-              >
-                <Send className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
+          </form>
         </div>
+
+        <NotificationDialog
+          open={notificationDialog.isOpen}
+          onOpenChange={notificationDialog.handleOpenChange}
+          title={notificationDialog.options.title}
+          description={notificationDialog.options.description}
+          type={notificationDialog.options.type}
+          actionText={notificationDialog.options.actionText}
+          onAction={notificationDialog.handleAction}
+        />
+
+        {/* File Preview Dialog */}
+        <Dialog
+          open={!!previewFile}
+          onOpenChange={open => !open && setPreviewFile(null)}
+        >
+          <DialogContent className="max-w-4xl max-h-[90vh] p-0">
+            <div className="p-6">
+              {previewFile && (
+                <ConvexFileDisplay
+                  attachment={previewFile}
+                  className="flex justify-center"
+                />
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
-    </div>
-  );
-}
+    );
+  }
+);
+
+ChatInputWithPreloadedData.displayName = "ChatInputWithPreloadedData";
+ChatInputWithQuery.displayName = "ChatInputWithQuery";
+ChatInputCore.displayName = "ChatInputCore";
+
+// Main exported component that decides which variant to use
+export const ChatInput = React.memo(
+  forwardRef<ChatInputRef, ChatInputProps>((props, ref) => {
+    const userContext = useUserContext();
+
+    // Check if we have all preloaded data available
+    const hasPreloadedData =
+      userContext.preloadedUserModels &&
+      userContext.preloadedSelectedModel &&
+      userContext.preloadedApiKeys;
+
+    if (hasPreloadedData) {
+      return <ChatInputWithPreloadedData {...props} ref={ref} />;
+    }
+
+    return <ChatInputWithQuery {...props} ref={ref} />;
+  })
+);
+
+ChatInput.displayName = "ChatInput";

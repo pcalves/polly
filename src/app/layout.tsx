@@ -1,23 +1,38 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Inter, Geist_Mono } from "next/font/google";
 import { ThemeProvider } from "@/providers/theme-provider";
 import { ConvexClientProvider } from "@/providers/convex-provider";
-import { Toaster } from "@/components/ui/toaster";
+import { ThinkingProvider } from "@/providers/thinking-provider";
+import { QueryProvider } from "@/providers/query-provider";
+import { AppProvider } from "@/providers/app-provider";
+import { Toaster } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import "katex/dist/katex.min.css";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
+  display: "swap",
+  preload: true,
+  weight: ["100", "200", "300", "400", "500", "600", "700", "800", "900"],
 });
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+  display: "swap",
+  preload: true,
+  weight: ["100", "200", "300", "400", "500", "600", "700", "800", "900"],
 });
 
 export const metadata: Metadata = {
-  title: "T3 Chat Clone - AI Chat with Multiple Providers",
-  description: "A premium chat interface supporting OpenAI, Anthropic, Google, and OpenRouter with BYOK support",
+  title: "Polly",
+  description:
+    "Multiple AI models in one place - supporting OpenAI, Anthropic, Google, and OpenRouter with BYOK support",
+  icons: {
+    icon: "/favicon.svg",
+  },
 };
 
 export default function RootLayout({
@@ -27,19 +42,38 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+        <link
+          rel="preconnect"
+          href="https://fonts.googleapis.com"
+          crossOrigin=""
+        />
+        <link
+          rel="preconnect"
+          href="https://fonts.gstatic.com"
+          crossOrigin=""
+        />
+      </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${inter.variable} ${geistMono.variable} antialiased relative font-sans`}
       >
         <ConvexClientProvider>
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="system"
-            enableSystem
-            disableTransitionOnChange
-          >
-            {children}
-            <Toaster />
-          </ThemeProvider>
+          <QueryProvider>
+            <ThemeProvider
+              attribute="class"
+              defaultTheme="system"
+              enableSystem
+              disableTransitionOnChange
+            >
+              <TooltipProvider>
+                <ThinkingProvider>
+                  <AppProvider>{children}</AppProvider>
+                  <Toaster />
+                </ThinkingProvider>
+              </TooltipProvider>
+            </ThemeProvider>
+          </QueryProvider>
         </ConvexClientProvider>
       </body>
     </html>

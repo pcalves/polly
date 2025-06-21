@@ -10,20 +10,93 @@
     --card-foreground: 0 0% 3.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 0 0% 3.9%;
-    --primary: 0 0% 9%;
+    --primary: 158 65% 40%;
     --primary-foreground: 0 0% 98%;
-    --secondary: 0 0% 96.1%;
-    --secondary-foreground: 0 0% 9%;
-    --muted: 0 0% 96.1%;
+    --secondary: 158 20% 96%;
+    --secondary-foreground: 158 65% 40%;
+    --muted: 158 20% 97%;
     --muted-foreground: 0 0% 45.1%;
-    --accent: 0 0% 96.1%;
-    --accent-foreground: 0 0% 9%;
+    --accent: 158 20% 96%;
+    --accent-foreground: 158 65% 40%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 89.8%;
-    --input: 0 0% 89.8%;
-    --ring: 0 0% 3.9%;
-    --radius: 0.5rem;
+    --border: 158 20% 90%;
+    --input: 158 20% 94%;
+    --ring: 158 65% 40%;
+    --radius: 1.5rem;
+
+    /* Light mode parrot-inspired accent colors */
+    --accent-purple: 280 70% 50%;
+    --accent-blue: 200 85% 55%;
+    --accent-emerald: 158 65% 40%;
+    --accent-orange: 35 90% 55%;
+    --accent-coral: 10 75% 60%;
+    --accent-yellow: 55 85% 60%;
+
+    /* Light mode glass effects */
+    --glass-bg: 255 255 255 / 0.8;
+    --glass-border: 158 20% 90% / 0.5;
+
+    /* Subtle brand color bleeding */
+    --sidebar-tinted: 158 12% 97.5%;
+    --sidebar-header-gradient: radial-gradient(
+      ellipse 200px 120px at 60px 28px,
+      hsl(158 20% 96%) 0%,
+      hsl(158 12% 97.5%) 60%,
+      transparent 90%
+    );
+    --active-element-tint: 158 25% 95%;
+    --active-element-border: 158 40% 85%;
+
+    /* Light mode parrot-inspired gradients */
+    --gradient-primary: linear-gradient(
+      135deg,
+      hsl(158 65% 40%) 0%,
+      hsl(200 85% 55%) 100%
+    );
+    --gradient-surface: linear-gradient(
+      135deg,
+      hsl(0 0% 100%) 0%,
+      hsl(158 20% 97%) 100%
+    );
+    --gradient-accent: linear-gradient(
+      135deg,
+      hsl(280 70% 50%) 0%,
+      hsl(200 85% 55%) 100%
+    );
+    --gradient-tropical: linear-gradient(
+      135deg,
+      hsl(158 65% 40%) 0%,
+      hsl(35 90% 55%) 50%,
+      hsl(10 75% 60%) 100%
+    );
+
+    /* Light mode organic gradients */
+    --gradient-soft: radial-gradient(
+      ellipse 800px 600px at 50% 120%,
+      hsl(158 65% 40% / 0.08) 0%,
+      transparent 70%
+    );
+    --gradient-blob: radial-gradient(
+      ellipse 1200px 800px at 25% 80%,
+      hsl(200 85% 55% / 0.05) 0%,
+      transparent 60%
+    );
+
+    /* Light mode shadows */
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow-md:
+      0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    --shadow-lg:
+      0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    --shadow-xl:
+      0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+    --shadow-inner: inset 0 2px 4px 0 rgb(0 0 0 / 0.05);
+    --shadow-glow: 0 0 20px -5px hsl(158 65% 40% / 0.3);
+    --shadow-soft: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+    --shadow-organic:
+      0 20px 40px -8px rgb(0 0 0 / 0.15), 0 10px 20px -4px rgb(0 0 0 / 0.1);
+
     --chart-1: 12 76% 61%;
     --chart-2: 173 58% 39%;
     --chart-3: 197 37% 24%;
@@ -32,25 +105,105 @@
   }
 
   .dark {
-    --background: 0 0% 3.9%;
-    --foreground: 0 0% 98%;
-    --card: 0 0% 3.9%;
-    --card-foreground: 0 0% 98%;
-    --popover: 0 0% 3.9%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 0 0% 98%;
-    --primary-foreground: 0 0% 9%;
-    --secondary: 0 0% 14.9%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 0 0% 14.9%;
-    --muted-foreground: 0 0% 63.9%;
-    --accent: 0 0% 14.9%;
-    --accent-foreground: 0 0% 98%;
+    --background: 228 20% 9.8%;
+    --foreground: 210 40% 98%;
+    --card: 228 20% 11%;
+    --card-foreground: 210 40% 98%;
+    --popover: 228 20% 11%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 158 80% 45%;
+    --primary-foreground: 222.2 84% 4.9%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
     --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 14.9%;
-    --input: 0 0% 14.9%;
-    --ring: 0 0% 83.1%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 158 80% 45%;
+
+    /* Dark mode parrot colors - more vibrant */
+    --accent-purple: 280 85% 65%;
+    --accent-blue: 200 95% 65%;
+    --accent-emerald: 158 80% 45%;
+    --accent-orange: 35 100% 60%;
+    --accent-coral: 10 85% 70%;
+    --accent-yellow: 55 100% 65%;
+
+    /* Dark mode glass effects */
+    --glass-bg: 217 33% 18% / 0.8;
+    --glass-border: 217 33% 25% / 0.5;
+
+    /* Surface colors with subtle gradients for depth */
+    --surface-primary: 228 20% 13%;
+    --surface-secondary: 228 20% 15%;
+    --surface-elevated: 228 20% 18%;
+    --surface-hover: 217 33% 15%;
+    --surface-active: 215 20% 35%;
+
+    /* Subtle brand color bleeding for dark mode */
+    --sidebar-tinted: 217 32% 17%;
+    --sidebar-header-gradient: radial-gradient(
+      ellipse 180px 100px at 60px 28px,
+      hsl(158 15% 19%) 0%,
+      hsl(217 32% 17%) 70%,
+      transparent 90%
+    );
+    --active-element-tint: 158 35% 22%;
+    --active-element-border: 158 45% 35%;
+
+    /* Dark mode gradients with enhanced parrot colors */
+    --gradient-primary: linear-gradient(
+      135deg,
+      hsl(158 80% 45%) 0%,
+      hsl(200 95% 65%) 100%
+    );
+    --gradient-surface: linear-gradient(
+      135deg,
+      hsl(222 84% 5%) 0%,
+      hsl(217 33% 8%) 100%
+    );
+    --gradient-accent: linear-gradient(
+      135deg,
+      hsl(280 85% 65%) 0%,
+      hsl(200 95% 65%) 100%
+    );
+    --gradient-tropical: linear-gradient(
+      135deg,
+      hsl(158 80% 45%) 0%,
+      hsl(35 100% 60%) 50%,
+      hsl(10 85% 70%) 100%
+    );
+
+    /* Organic gradients with parrot colors */
+    --gradient-soft: radial-gradient(
+      ellipse 800px 600px at 50% 120%,
+      hsl(158 80% 45% / 0.15) 0%,
+      transparent 70%
+    );
+    --gradient-blob: radial-gradient(
+      ellipse 1200px 800px at 25% 80%,
+      hsl(200 95% 65% / 0.08) 0%,
+      transparent 60%
+    );
+
+    /* Shadows */
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow-md:
+      0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    --shadow-lg:
+      0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    --shadow-xl:
+      0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+    --shadow-inner: inset 0 2px 4px 0 rgb(0 0 0 / 0.05);
+    --shadow-glow: 0 0 20px -5px hsl(158 80% 45% / 0.3);
+    --shadow-soft: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+    --shadow-organic:
+      0 20px 40px -8px rgb(0 0 0 / 0.15), 0 10px 20px -4px rgb(0 0 0 / 0.1);
+
     --chart-1: 220 70% 50%;
     --chart-2: 160 60% 45%;
     --chart-3: 30 80% 55%;
@@ -64,17 +217,128 @@
   --font-mono: var(--font-geist-mono);
 }
 
+/* Safari font loading fix */
+@supports (-webkit-appearance: none) {
+  :root {
+    --font-family-fallback:
+      -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
+      Arial, sans-serif;
+  }
+}
+
 @layer base {
   * {
     border-color: hsl(var(--border));
   }
   body {
     @apply bg-background text-foreground;
-    font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+    font-family:
+      var(--font-geist-sans, var(--font-family-fallback, -apple-system)),
+      -apple-system,
+      BlinkMacSystemFont,
+      "Segoe UI",
+      Roboto,
+      "Helvetica Neue",
+      Arial,
+      sans-serif;
+    font-feature-settings:
+      "rlig" 1,
+      "calt" 1,
+      "kern" 1,
+      "liga" 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    line-height: 1.6;
+    font-display: swap;
+  }
+
+  /* Enhanced typography base styles */
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-weight: 500;
+    line-height: 1.2;
+    letter-spacing: -0.025em;
+    color: hsl(var(--foreground));
+  }
+
+  h1 {
+    font-size: 2.25rem;
+    font-weight: 600;
+    letter-spacing: -0.075em;
+    line-height: 1.1;
+  }
+
+  h2 {
+    font-size: 1.875rem;
+    letter-spacing: -0.05em;
+  }
+
+  h3 {
+    font-size: 1.5rem;
+  }
+
+  h4 {
+    font-size: 1.25rem;
+  }
+
+  h5,
+  h6 {
+    font-size: 1.125rem;
+  }
+
+  p {
+    line-height: 1.6;
+    margin-bottom: 1em;
+  }
+
+  .lead {
+    font-size: 1.125rem;
+    line-height: 1.7;
+    letter-spacing: -0.015em;
+    color: hsl(var(--muted-foreground));
+  }
+
+  small {
+    font-size: 0.875rem;
+    line-height: 1.4;
+    color: hsl(var(--muted-foreground));
+  }
+
+  /* Code and pre styling */
+  code {
+    font-family: var(--font-mono);
+    font-size: 0.875em;
+    font-weight: 400;
+    background-color: hsl(var(--muted));
+    color: hsl(var(--foreground));
+    padding: 0.125rem 0.25rem;
+    border-radius: 0.25rem;
+  }
+
+  pre {
+    font-family: var(--font-mono);
+    font-size: 0.875rem;
+    line-height: 1.5;
+    background-color: hsl(var(--muted));
+    padding: 1rem;
+    border-radius: 0.5rem;
+    overflow-x: auto;
+  }
+
+  pre code {
+    background-color: transparent;
+    padding: 0;
+    font-size: inherit;
+    border-radius: 0;
   }
 }
 
-/* Custom scrollbar */
+/* Custom scrollbar with organic design */
 .scrollbar-thin {
   scrollbar-width: thin;
   scrollbar-color: hsl(var(--muted)) transparent;
@@ -86,18 +350,438 @@
 
 .scrollbar-thin::-webkit-scrollbar-track {
   background: transparent;
+  border-radius: 10px;
 }
 
 .scrollbar-thin::-webkit-scrollbar-thumb {
-  background-color: hsl(var(--muted));
-  border-radius: 3px;
+  background: linear-gradient(
+    180deg,
+    hsl(var(--muted)) 0%,
+    hsl(var(--muted-foreground)) 100%
+  );
+  border-radius: 10px;
 }
 
 .scrollbar-thin::-webkit-scrollbar-thumb:hover {
-  background-color: hsl(var(--muted-foreground));
+  background: linear-gradient(
+    180deg,
+    hsl(var(--muted-foreground)) 0%,
+    hsl(var(--accent)) 100%
+  );
 }
 
+/* Organic shapes and glass morphism utilities */
+@layer utilities {
+  .glass {
+    background: hsl(var(--glass-bg));
+    backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid hsl(var(--glass-border));
+  }
 
+  .glass-hover {
+    @apply glass;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .glass-hover:hover {
+    background: hsl(var(--surface-hover) / 0.8);
+    border-color: hsl(var(--accent) / 0.3);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-organic);
+  }
+
+  .surface-primary {
+    background: hsl(var(--surface-primary));
+  }
+
+  .surface-secondary {
+    background: hsl(var(--surface-secondary));
+  }
+
+  .surface-elevated {
+    background: hsl(var(--surface-elevated));
+  }
+
+  .gradient-primary {
+    background: var(--gradient-primary);
+  }
+
+  .gradient-surface {
+    background: var(--gradient-surface);
+  }
+
+  .gradient-accent {
+    background: var(--gradient-accent);
+  }
+
+  .gradient-soft {
+    background: var(--gradient-soft);
+  }
+
+  .gradient-blob {
+    background: var(--gradient-blob);
+  }
+
+  .gradient-tropical {
+    background: var(--gradient-tropical);
+  }
+
+  .text-gradient-tropical {
+    background: var(--gradient-tropical);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-size: 300% 300%;
+    animation: gradientShift 4s ease-in-out infinite;
+  }
+
+  .parrot-glow {
+    filter: drop-shadow(0 0 8px hsl(var(--accent-emerald) / 0.4));
+    transition: filter 0.3s ease;
+  }
+
+  .parrot-glow:hover {
+    filter: drop-shadow(0 0 12px hsl(var(--accent-coral) / 0.6))
+      drop-shadow(0 0 20px hsl(var(--accent-blue) / 0.3));
+  }
+
+  .parrot-glow-light {
+    filter: drop-shadow(0 0 6px hsl(var(--accent-emerald) / 0.3));
+    transition: filter 0.3s ease;
+  }
+
+  .parrot-glow-light:hover {
+    filter: drop-shadow(0 0 10px hsl(var(--accent-coral) / 0.4))
+      drop-shadow(0 0 16px hsl(var(--accent-blue) / 0.2));
+  }
+
+  .shadow-glow {
+    box-shadow: var(--shadow-glow);
+  }
+
+  .shadow-soft {
+    box-shadow: var(--shadow-soft);
+  }
+
+  .shadow-organic {
+    box-shadow: var(--shadow-organic);
+  }
+
+  /* Brand color bleeding utilities */
+  .sidebar-tinted {
+    background: hsl(var(--sidebar-tinted));
+  }
+
+  .sidebar-header-gradient {
+    background: var(--sidebar-header-gradient);
+  }
+
+  .active-element-tint {
+    background: hsl(var(--active-element-tint));
+    border-color: hsl(var(--active-element-border));
+  }
+
+  .active-element-enhanced {
+    background: hsl(var(--active-element-tint));
+    border: 1px solid hsl(var(--active-element-border));
+    box-shadow: 0 0 0 1px hsl(var(--accent-emerald) / 0.1);
+  }
+
+  /* Organic border radius utilities */
+  .rounded-organic {
+    border-radius: 2rem;
+  }
+
+  .rounded-blob {
+    border-radius: 2.5rem;
+  }
+
+  .rounded-soft {
+    border-radius: 1.5rem;
+  }
+
+  .rounded-pill {
+    border-radius: 50px;
+  }
+}
+
+/* Animation utilities */
+@layer utilities {
+  .animate-fade-in {
+    animation: fadeIn 0.5s ease-out;
+  }
+
+  .animate-slide-up {
+    animation: slideUp 0.4s ease-out;
+  }
+
+  .animate-scale-in {
+    animation: scaleIn 0.3s ease-out;
+  }
+
+  .animate-glow {
+    animation: glow 3s ease-in-out infinite alternate;
+  }
+
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+
+  .animate-pulse-soft {
+    animation: pulseSoft 2s ease-in-out infinite;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes glow {
+  from {
+    box-shadow: 0 0 20px -5px hsl(158 80% 45% / 0.3);
+  }
+  to {
+    box-shadow: 0 0 40px -5px hsl(158 80% 45% / 0.6);
+  }
+}
+
+@keyframes gradientShift {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+/* Polly-specific animations */
+@keyframes pollyFloat {
+  0%,
+  100% {
+    transform: translateY(0px) translateX(0px) rotate(0deg);
+  }
+  25% {
+    transform: translateY(-2px) translateX(1px) rotate(1deg);
+  }
+  50% {
+    transform: translateY(-4px) translateX(-1px) rotate(-1deg);
+  }
+  75% {
+    transform: translateY(-2px) translateX(1px) rotate(0.5deg);
+  }
+}
+
+@keyframes pollyPulse {
+  0%,
+  100% {
+    opacity: 0.7;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+}
+
+@keyframes pollyWave {
+  0%,
+  100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-3px) rotate(2deg);
+  }
+}
+
+@keyframes textShimmer {
+  0% {
+    background-position: -100% 0;
+  }
+  100% {
+    background-position: 100% 0;
+  }
+}
+
+@keyframes letterSpacing {
+  0%,
+  100% {
+    letter-spacing: -0.075em;
+  }
+  50% {
+    letter-spacing: -0.05em;
+  }
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes pulseSoft {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+@keyframes scrollLeft {
+  0% {
+    transform: translateX(-25%);
+  }
+  100% {
+    transform: translateX(calc(-125% / 2));
+  }
+}
+
+@keyframes scrollRight {
+  0% {
+    transform: translateX(calc(-100% / 2));
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+
+.ticker-row {
+  display: flex;
+  gap: 0.75rem;
+  width: fit-content;
+  will-change: transform;
+}
+
+.ticker-row-left {
+  animation: scrollLeft 120s linear infinite;
+}
+
+.ticker-row-right {
+  animation: scrollRight 120s linear infinite;
+}
+
+/* Message animations */
+@keyframes messageSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(30px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.message-enter {
+  animation: messageSlideIn 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Typing indicator */
+@keyframes typing {
+  0%,
+  60%,
+  100% {
+    transform: translateY(0);
+  }
+  30% {
+    transform: translateY(-8px);
+  }
+}
+
+.typing-dot {
+  animation: typing 1.6s infinite ease-in-out;
+}
+
+.typing-dot:nth-child(1) {
+  animation-delay: -0.32s;
+}
+
+.typing-dot:nth-child(2) {
+  animation-delay: -0.16s;
+}
+
+/* Thinking dots animation for parrot logo */
+@keyframes thinkingPulse {
+  0%,
+  100% {
+    opacity: 0.3;
+    transform: scale(0.8);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+}
+
+/* Shimmer effect for loading states */
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* Focus styles */
+.focus-ring {
+  @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background;
+}
+
+/* Hover lift effect */
+.hover-lift {
+  transition:
+    transform 0.3s ease-out,
+    box-shadow 0.3s ease-out;
+}
+
+.hover-lift:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-organic);
+}
+
+/* Organic hover effect */
+.hover-organic {
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.hover-organic:hover {
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: var(--shadow-soft);
+}
 
 @layer base {
   * {
@@ -106,4 +790,487 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* Typography Utilities */
+@layer utilities {
+  /* Display Typography */
+  .text-display-xl {
+    font-size: 6rem;
+    line-height: 1;
+    letter-spacing: -0.1em;
+    font-weight: 700;
+  }
+
+  .text-display-lg {
+    font-size: 4.5rem;
+    line-height: 1.05;
+    letter-spacing: -0.1em;
+    font-weight: 700;
+  }
+
+  .text-display-md {
+    font-size: 3.5rem;
+    line-height: 1.1;
+    letter-spacing: -0.075em;
+    font-weight: 600;
+  }
+
+  .text-display-sm {
+    font-size: 2.5rem;
+    line-height: 1.2;
+    letter-spacing: -0.075em;
+    font-weight: 600;
+  }
+
+  /* Body Typography with perfect readability */
+  .text-body-lg {
+    font-size: 1.125rem;
+    line-height: 1.7;
+    letter-spacing: -0.015em;
+  }
+
+  .text-body {
+    font-size: 1rem;
+    line-height: 1.6;
+    letter-spacing: 0;
+  }
+
+  .text-body-sm {
+    font-size: 0.875rem;
+    line-height: 1.6;
+    letter-spacing: 0.015em;
+  }
+
+  /* UI Typography */
+  .text-caption {
+    font-size: 0.75rem;
+    line-height: 1.25;
+    letter-spacing: 0.05em;
+    font-weight: 500;
+  }
+
+  .text-overline {
+    font-size: 0.625rem;
+    line-height: 1;
+    letter-spacing: 0.15em;
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+
+  /* Letter Spacing Utilities */
+  .tracking-tightest {
+    letter-spacing: -0.075em;
+  }
+
+  .tracking-tighter {
+    letter-spacing: -0.05em;
+  }
+
+  .tracking-tight {
+    letter-spacing: -0.025em;
+  }
+
+  .tracking-wide {
+    letter-spacing: 0.025em;
+  }
+
+  .tracking-wider {
+    letter-spacing: 0.05em;
+  }
+
+  .tracking-widest {
+    letter-spacing: 0.1em;
+  }
+
+  .tracking-extra-wide {
+    letter-spacing: 0.15em;
+  }
+
+  /* Line Height Utilities */
+  .leading-none {
+    line-height: 1;
+  }
+
+  .leading-tight {
+    line-height: 1.1;
+  }
+
+  .leading-snug {
+    line-height: 1.2;
+  }
+
+  .leading-normal {
+    line-height: 1.4;
+  }
+
+  .leading-relaxed {
+    line-height: 1.5;
+  }
+
+  .leading-comfortable {
+    line-height: 1.6;
+  }
+
+  .leading-loose {
+    line-height: 1.7;
+  }
+
+  /* Typography Color Utilities */
+  .text-emphasis {
+    color: hsl(var(--foreground));
+  }
+
+  .text-subtle {
+    color: hsl(var(--muted-foreground));
+  }
+
+  .text-muted {
+    color: hsl(var(--muted-foreground) / 0.7);
+  }
+
+  /* Typography Weight Utilities */
+  .font-display {
+    font-weight: 700;
+    letter-spacing: -0.075em;
+  }
+
+  .font-heading {
+    font-weight: 500;
+    letter-spacing: -0.025em;
+  }
+
+  .font-body {
+    font-weight: 400;
+    letter-spacing: 0;
+  }
+
+  .font-ui {
+    font-weight: 400;
+    letter-spacing: 0.015em;
+  }
+
+  /* Text Balance for Better Typography */
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .text-pretty {
+    text-wrap: pretty;
+  }
+
+  /* Optimized Text Rendering */
+  .text-optimized {
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-feature-settings:
+      "rlig" 1,
+      "calt" 1,
+      "kern" 1,
+      "liga" 1;
+  }
+
+  /* Typography Scale Utilities */
+  .text-micro {
+    font-size: 0.625rem;
+    line-height: 1;
+    letter-spacing: 0.1em;
+  }
+
+  .text-tiny {
+    font-size: 0.6875rem;
+    line-height: 1.2;
+    letter-spacing: 0.05em;
+  }
+
+  /* Prose Utilities for Long Form Content */
+  .prose-tight {
+    line-height: 1.5;
+  }
+
+  .prose-comfortable {
+    line-height: 1.6;
+  }
+
+  .prose-loose {
+    line-height: 1.7;
+  }
+
+  /* Monospace Typography */
+  .text-mono {
+    font-family: var(
+      --font-geist-mono,
+      ui-monospace,
+      SFMono-Regular,
+      Monaco,
+      Consolas,
+      monospace
+    );
+    font-feature-settings:
+      "liga" 0,
+      "calt" 0;
+  }
+
+  .text-code {
+    font-family: var(
+      --font-geist-mono,
+      ui-monospace,
+      SFMono-Regular,
+      Monaco,
+      Consolas,
+      monospace
+    );
+    font-size: 0.875em;
+    font-weight: 400;
+    letter-spacing: 0;
+  }
+
+  /* Safari font loading fallback */
+  @supports (-webkit-appearance: none) and (not (-webkit-text-stroke: initial)) {
+    body {
+      font-family:
+        -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
+        Arial, sans-serif;
+    }
+
+    .font-sans {
+      font-family: var(
+        --font-geist-sans,
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        Roboto,
+        "Helvetica Neue",
+        Arial,
+        sans-serif
+      ) !important;
+    }
+
+    .font-mono {
+      font-family: var(
+        --font-geist-mono,
+        ui-monospace,
+        SFMono-Regular,
+        Monaco,
+        Consolas,
+        monospace
+      ) !important;
+    }
+  }
+
+  /* Force font loading for Safari */
+  @media screen and (-webkit-min-device-pixel-ratio: 1) {
+    body {
+      font-family:
+        var(--font-geist-sans),
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        Roboto,
+        "Helvetica Neue",
+        Arial,
+        sans-serif;
+    }
+  }
+
+  /* Polly Logo Utilities */
+  .polly-logo {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .polly-icon-primary {
+    /* Static - no animation */
+  }
+
+  .polly-icon-secondary {
+    opacity: 0.8;
+  }
+
+  .polly-icon-tertiary {
+    opacity: 0.6;
+  }
+
+  .polly-icon-quaternary {
+    opacity: 0.5;
+  }
+
+  .polly-text {
+    font-family: var(--font-sans);
+    font-weight: 700;
+    color: hsl(var(--foreground));
+    letter-spacing: -0.02em;
+    text-rendering: optimizeLegibility;
+    position: relative;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .polly-text::after {
+    content: "Polly";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(
+      270deg,
+      hsl(var(--accent-emerald)) 0%,
+      hsl(var(--accent-coral)) 25%,
+      hsl(var(--accent-blue)) 50%,
+      hsl(var(--accent-yellow)) 75%,
+      hsl(var(--accent-emerald)) 100%
+    );
+    background-size: 200% 100%;
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    opacity: 0;
+    transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .polly-container:hover .polly-text::after {
+    opacity: 1;
+    animation: gradientShift 3s ease-in-out infinite;
+  }
+
+  .polly-container:hover .polly-icon-primary {
+    transform: scale(1.05);
+    transition: transform 0.2s ease;
+  }
+
+  .polly-container:hover .polly-icon-secondary {
+    transform: scale(1.02);
+    transition: transform 0.2s ease;
+  }
+
+  .polly-container:hover .polly-icon-tertiary {
+    opacity: 0.8;
+    transition: opacity 0.2s ease;
+  }
+
+  .polly-container:hover .polly-icon-quaternary {
+    opacity: 0.7;
+    transition: opacity 0.2s ease;
+  }
+}
+
+/* KaTeX Math Rendering */
+.katex {
+  font-size: 1.1em;
+  line-height: 1.2;
+}
+
+.katex-display {
+  margin: 1rem 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+/* Custom text selection styling for assistant messages */
+[data-message-role="assistant"] ::selection {
+  background-color: hsl(var(--accent-emerald) / 0.2);
+  color: inherit;
+}
+
+[data-message-role="assistant"] ::-moz-selection {
+  background-color: hsl(var(--accent-emerald) / 0.2);
+  color: inherit;
+}
+
+.dark [data-message-role="assistant"] ::selection {
+  background-color: hsl(var(--accent-emerald) / 0.3);
+  color: inherit;
+}
+
+.dark [data-message-role="assistant"] ::-moz-selection {
+  background-color: hsl(var(--accent-emerald) / 0.3);
+  color: inherit;
+}
+
+/* Prevent KaTeX from causing layout shifts */
+.katex-display > .katex {
+  white-space: nowrap;
+}
+
+/* Ensure proper containment */
+.prose .katex-display {
+  margin: 1.5rem 0;
+  text-align: center;
+  contain: layout;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.prose .katex {
+  font-size: inherit;
+  max-width: 100%;
+}
+
+/* KaTeX theming for light mode */
+.katex .mord {
+  color: hsl(var(--foreground));
+}
+
+.katex .mbin,
+.katex .mrel {
+  color: hsl(var(--primary));
+}
+
+.katex .mop {
+  color: hsl(var(--accent-purple));
+}
+
+.katex .mopen,
+.katex .mclose {
+  color: hsl(var(--muted-foreground));
+}
+
+/* KaTeX theming for dark mode */
+.dark .katex .mord {
+  color: hsl(var(--foreground));
+}
+
+.dark .katex .mbin,
+.dark .katex .mrel {
+  color: hsl(var(--primary));
+}
+
+.dark .katex .mop {
+  color: hsl(var(--accent-purple));
+}
+
+.dark .katex .mopen,
+.dark .katex .mclose {
+  color: hsl(var(--muted-foreground));
+}
+
+/* Prevent KaTeX from affecting layout calculations */
+.prose .katex-display {
+  isolation: isolate;
+}
+
+/* Ensure math content doesn't break chat layout */
+.prose {
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+.prose .katex-display .katex {
+  display: inline-block;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+/* KaTeX container stability */
+.katex-container {
+  contain: layout style;
+  overflow-anchor: none;
+}
+
+.katex-container .katex-display {
+  will-change: auto;
+  transform: translateZ(0);
 }

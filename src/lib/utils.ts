@@ -1,8 +1,9 @@
-import { clsx, type ClassValue } from "clsx"
-import { twMerge } from "tailwind-merge"
+import { type ClassValue, clsx } from "clsx";
+import { twMerge } from "tailwind-merge";
+import { countTokens as gptCountTokens } from "gpt-tokenizer";
 
 export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs))
+  return twMerge(clsx(inputs));
 }
 
 export function formatDate(date: Date | number): string {
@@ -22,12 +23,21 @@ export function formatDate(date: Date | number): string {
   }
 }
 
-export function truncateText(text: string, maxLength: number): string {
-  if (text.length <= maxLength) return text;
-  return text.substring(0, maxLength) + "...";
-}
-
 export function getConversationTitle(content: string): string {
   const clean = content.replace(/[#*`]/g, "").trim();
-  return truncateText(clean, 50) || "New conversation";
+  return clean || "New conversation";
+}
+
+// Token counting utility
+export function countTokens(text: string): number {
+  if (!text || text.trim().length === 0) return 0;
+
+  try {
+    // Use the gpt-tokenizer library for accurate token counting
+    return gptCountTokens(text);
+  } catch {
+    // Fallback to simple word-based estimation if tokenizer fails
+    // Roughly 0.75 tokens per word is a common approximation
+    return Math.ceil(text.split(/\s+/).length * 0.75);
+  }
 }

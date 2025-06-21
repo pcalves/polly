@@ -1,159 +1,329 @@
 "use client";
 
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { useConversations } from "@/hooks/use-conversations";
-import { useUser } from "@/hooks/use-user";
+import { SidebarSearch } from "@/components/sidebar/search";
+import { ConversationList } from "@/components/sidebar/conversation-list";
+import { ConversationListClient } from "@/components/sidebar/conversation-list-client";
+import { UserSection } from "@/components/sidebar/user-section";
 import { ConversationId } from "@/types";
-import { formatDate, truncateText } from "@/lib/utils";
-import { 
-  MessageSquare, 
-  Plus, 
-  Trash2,
-  LogIn,
-  User,
-  LogOut
-} from "lucide-react";
+import { Settings, Moon, Sun, PanelLeft } from "lucide-react";
+import { ParrotLogo } from "@/components/parrot-logo";
 import { cn } from "@/lib/utils";
-import { LoginDialog } from "@/components/auth/login-dialog";
-import { useAuthActions } from "@convex-dev/auth/react";
+import { useState, useEffect, useCallback } from "react";
+import { useTheme } from "next-themes";
+import { useThinking } from "@/providers/thinking-provider";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import Link from "next/link";
+import { useParams } from "next/navigation";
+import { useUser } from "@/hooks/use-user";
+import { Preloaded } from "convex/react";
+import { api } from "../../convex/_generated/api";
 
-interface SidebarProps {
-  currentConversationId?: ConversationId;
-  onConversationSelect: (id: ConversationId) => void;
-  onNewConversation: () => void;
-  isVisible: boolean;
+const SIDEBAR_STORAGE_KEY = "sidebar-visible";
+
+export function loadSidebarVisibility(): boolean {
+  if (typeof window === "undefined") return true;
+
+  try {
+    const stored = localStorage.getItem(SIDEBAR_STORAGE_KEY);
+    return stored !== null ? JSON.parse(stored) : true;
+  } catch (error) {
+    console.warn("Failed to load sidebar visibility from localStorage:", error);
+    return true;
+  }
 }
 
-export function Sidebar({ 
-  currentConversationId, 
-  onConversationSelect, 
-  onNewConversation,
-  isVisible 
-}: SidebarProps) {
-  const { user, isAnonymous, remainingMessages } = useUser();
-  const { signOut } = useAuthActions();
-  const [showLoginDialog, setShowLoginDialog] = useState(false);
-  const { conversations, deleteConversationById, isLoading } = useConversations(user?._id);
+export function saveSidebarVisibility(isVisible: boolean): void {
+  if (typeof window === "undefined") return;
 
-  const handleDeleteConversation = async (id: ConversationId, e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (confirm("Delete this conversation?")) {
-      await deleteConversationById(id);
-      if (currentConversationId === id) {
-        onNewConversation();
-      }
+  try {
+    localStorage.setItem(SIDEBAR_STORAGE_KEY, JSON.stringify(isVisible));
+    // Dispatch custom event for same-tab updates
+    window.dispatchEvent(new CustomEvent("sidebar-visibility-changed"));
+  } catch (error) {
+    console.warn("Failed to save sidebar visibility to localStorage:", error);
+  }
+}
+
+interface SidebarProps {
+  children?: React.ReactNode;
+  preloadedConversations?: Preloaded<typeof api.conversations.list>;
+}
+
+export function Sidebar({ children, preloadedConversations }: SidebarProps) {
+  const { isThinking } = useThinking();
+  const [searchQuery, setSearchQuery] = useState("");
+  const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const [lastDesktopSidebarState, setLastDesktopSidebarState] = useState(true);
+  const [isSidebarVisible, setIsSidebarVisible] = useState(true);
+  const params = useParams();
+  const currentConversationId = params.conversationId as ConversationId;
+  const { user } = useUser();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    setIsSidebarVisible(loadSidebarVisibility());
+  }, []);
+
+  useEffect(() => {
+    if (currentConversationId && isMobile) {
+      setIsSidebarVisible(false);
+      saveSidebarVisibility(false);
     }
-  };
+  }, [currentConversationId, isMobile]);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      const mobile = window.innerWidth < 1024; // lg breakpoint
+      const previouslyMobile = isMobile;
+      setIsMobile(mobile);
+
+      // Auto-collapse when transitioning to mobile
+      if (mobile && !previouslyMobile) {
+        // Save current desktop state before collapsing
+        setLastDesktopSidebarState(isSidebarVisible);
+        setIsSidebarVisible(false);
+        saveSidebarVisibility(false);
+      }
+      // Auto-expand when transitioning to desktop
+      else if (!mobile && previouslyMobile) {
+        // Restore previous desktop state
+        setIsSidebarVisible(lastDesktopSidebarState);
+        saveSidebarVisibility(lastDesktopSidebarState);
+      }
+      // On initial load for mobile, default to closed unless explicitly opened
+      else if (mobile && typeof window !== "undefined") {
+        const stored = localStorage.getItem(SIDEBAR_STORAGE_KEY);
+        if (stored === null) {
+          setIsSidebarVisible(false);
+        }
+      }
+    };
+
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+
+    return () => {
+      window.removeEventListener("resize", checkMobile);
+    };
+  }, [isMobile, isSidebarVisible, lastDesktopSidebarState]);
+
+  const handleToggleSidebar = useCallback(() => {
+    const newVisibility = !isSidebarVisible;
+    setIsSidebarVisible(newVisibility);
+    saveSidebarVisibility(newVisibility);
+
+    // Track desktop state when manually toggling on desktop
+    if (!isMobile) {
+      setLastDesktopSidebarState(newVisibility);
+    }
+  }, [isSidebarVisible, isMobile]);
+
+  // Keyboard shortcut for toggling sidebar (CMD + B)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // CMD + B (Mac) or Ctrl + B (Windows/Linux)
+      if ((e.metaKey || e.ctrlKey) && e.key === "b") {
+        e.preventDefault();
+        handleToggleSidebar();
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [handleToggleSidebar]);
+
+  const toggleTheme = useCallback(() => {
+    setTheme(theme === "dark" ? "light" : "dark");
+  }, [theme, setTheme]);
+
+  const handleBackdropClick = useCallback(() => {
+    if (isMobile && isSidebarVisible) {
+      setIsSidebarVisible(false);
+      saveSidebarVisibility(false);
+    }
+  }, [isMobile, isSidebarVisible]);
 
   return (
-    <div className={cn(
-      "bg-background border-r flex-shrink-0 overflow-hidden",
-      isVisible ? "w-80 opacity-100" : "w-0 opacity-0"
-    )}
-    style={{
-      transition: 'width 300ms ease-out, opacity 300ms ease-out'
-    }}>
-      <div className="flex flex-col h-full w-80">
-        {/* Header */}
-        <div className="p-4 border-b">
-          <Button
-            onClick={onNewConversation}
-            className="w-full justify-start gap-2"
-          >
-            <Plus className="h-4 w-4" />
-            New Chat
-          </Button>
-        </div>
+    <div className="h-screen flex relative">
+      {/* Mobile backdrop overlay */}
+      {isMobile && isSidebarVisible && (
+        <div
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-30 lg:hidden"
+          onClick={handleBackdropClick}
+        />
+      )}
 
-        {/* User Section */}
-        <div className="p-4 border-b">
-          {isAnonymous ? (
-            <div className="space-y-2">
-              <div className="text-sm text-muted-foreground">
-                {remainingMessages} messages remaining
-              </div>
-              <Button
-                onClick={() => setShowLoginDialog(true)}
-                variant="outline"
-                className="w-full justify-start gap-2"
-                size="sm"
-              >
-                <LogIn className="h-4 w-4" />
-                Sign in for unlimited
-              </Button>
-            </div>
-          ) : (
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary text-primary-foreground text-sm">
-                  <User className="h-4 w-4" />
-                </div>
-                <div className="text-sm">
-                  {user?.name || user?.email || "Signed in"}
-                </div>
-              </div>
-              <Button
-                onClick={() => signOut()}
-                variant="ghost"
-                size="sm"
-                className="h-8 w-8 p-0"
-              >
-                <LogOut className="h-4 w-4" />
-              </Button>
-            </div>
-          )}
-        </div>
+      <div className="fixed left-4 top-4 z-50">
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleToggleSidebar}
+              className="h-8 w-8 p-0 transition-colors duration-150 bg-background/80 backdrop-blur-sm border border-border/40"
+              title={isSidebarVisible ? "Collapse sidebar" : "Expand sidebar"}
+            >
+              <PanelLeft className="h-4 w-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>{isSidebarVisible ? "Collapse sidebar" : "Expand sidebar"}</p>
+          </TooltipContent>
+        </Tooltip>
+      </div>
 
-        {/* Conversations */}
-        <div className="flex-1 overflow-y-auto p-2">
-          {isLoading ? (
-            <div className="p-4 text-center text-muted-foreground">
-              Loading conversations...
-            </div>
-          ) : conversations.length === 0 ? (
-            <div className="p-4 text-center text-muted-foreground">
-              No conversations yet
-            </div>
-          ) : (
-            <div className="space-y-1">
-              {conversations.map((conversation) => (
-                <div
-                  key={conversation._id}
-                  className={cn(
-                    "group flex items-center gap-2 p-3 rounded-lg cursor-pointer hover:bg-muted/50 transition-colors",
-                    currentConversationId === conversation._id && "bg-muted"
-                  )}
-                  onClick={() => onConversationSelect(conversation._id)}
-                >
-                  <MessageSquare className="h-4 w-4 shrink-0 text-muted-foreground" />
-                  <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium truncate">
-                      {truncateText(conversation.title, 30)}
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      {formatDate(conversation.updatedAt)}
-                    </div>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="opacity-0 group-hover:opacity-100 h-6 w-6 p-0"
-                    onClick={(e) => handleDeleteConversation(conversation._id, e)}
-                  >
-                    <Trash2 className="h-3 w-3" />
-                  </Button>
+      <div
+        className={cn(
+          "sidebar-tinted flex-shrink-0 overflow-hidden fixed left-0 top-0 h-screen z-40",
+          isSidebarVisible ? "w-80 opacity-100" : "w-0 opacity-0"
+        )}
+        style={{
+          transition:
+            "width 300ms cubic-bezier(0.4, 0, 0.2, 1), opacity 300ms cubic-bezier(0.4, 0, 0.2, 1)",
+        }}
+      >
+        <div className="flex flex-col h-full w-80">
+          {/* Header with logo and controls */}
+          <div className="flex-shrink-0 sidebar-header-gradient">
+            {/* Top spacing to align with header - matching the 64px header height and centering */}
+            <div className="h-16 flex items-center px-6">
+              {/* Left: Spacer for toggle button */}
+              <div className="flex-shrink-0 w-8">
+                {/* Empty space where toggle button would be */}
+              </div>
+
+              {/* Center: Logo */}
+              <div className="flex-1 flex justify-center">
+                <div className="polly-container flex items-center gap-2 group cursor-pointer">
+                  <ParrotLogo size="md" isThinking={isThinking} />
+                  <h1 className="polly-text text-xl leading-none">Polly</h1>
                 </div>
-              ))}
+              </div>
+
+              {/* Right: Settings and theme toggle */}
+              <div className="flex-shrink-0 flex items-center gap-0.5">
+                {/* Settings button - only show for authenticated users */}
+                {user && !user.isAnonymous && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Link href="/settings">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 w-8 p-0 transition-colors duration-150"
+                        >
+                          <Settings className="h-4 w-4" />
+                        </Button>
+                      </Link>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Settings</p>
+                    </TooltipContent>
+                  </Tooltip>
+                )}
+
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={toggleTheme}
+                      className="h-8 w-8 p-0 transition-colors duration-150"
+                      title={
+                        mounted
+                          ? theme === "dark"
+                            ? "Switch to light mode"
+                            : "Switch to dark mode"
+                          : undefined
+                      }
+                    >
+                      {!mounted ? (
+                        <Moon className="h-4 w-4" />
+                      ) : theme === "dark" ? (
+                        <Sun className="h-4 w-4" />
+                      ) : (
+                        <Moon className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>
+                      {mounted
+                        ? theme === "dark"
+                          ? "Switch to light mode"
+                          : "Switch to dark mode"
+                        : "Toggle theme"}
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
             </div>
-          )}
+
+            <div className="px-6 pb-6 space-y-6">
+              <div className="space-y-3">
+                <div>
+                  <Link href="/" className="block w-full">
+                    <Button
+                      variant="emerald"
+                      className="w-full justify-center gap-2 h-9 text-sm transition-all duration-200 hover:scale-[1.02]"
+                    >
+                      New Chat
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+
+              {/* Search */}
+              <SidebarSearch
+                searchQuery={searchQuery}
+                onSearchChange={setSearchQuery}
+              />
+            </div>
+          </div>
+
+          <div className="flex-1 overflow-y-auto px-2 min-h-0 scrollbar-thin">
+            {preloadedConversations ? (
+              <ConversationList
+                searchQuery={searchQuery}
+                currentConversationId={currentConversationId}
+                preloadedConversations={preloadedConversations}
+              />
+            ) : (
+              <ConversationListClient
+                searchQuery={searchQuery}
+                currentConversationId={currentConversationId}
+              />
+            )}
+          </div>
+
+          <UserSection />
         </div>
       </div>
-      
-      <LoginDialog 
-        open={showLoginDialog} 
-        onOpenChange={setShowLoginDialog}
-      />
+
+      <div
+        className={`
+          flex-1 h-screen flex flex-col transition-all duration-300 ease-out
+          ${
+            isMobile
+              ? "ml-0" // No margin on mobile (overlay)
+              : isSidebarVisible
+                ? "ml-80" // 320px sidebar width on desktop
+                : "ml-0"
+          }
+        `}
+      >
+        {children}
+      </div>
     </div>
   );
 }

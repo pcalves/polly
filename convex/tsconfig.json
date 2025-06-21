@@ -1,0 +1,13 @@
+{
+  "include": ["./**/*"],
+  "exclude": ["./_generated"],
+  "compilerOptions": {
+    "target": "esnext",
+    "lib": ["esnext"],
+    "allowJs": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "moduleResolution": "Bundler"
+  }
+}

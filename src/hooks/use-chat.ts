@@ -1,376 +1,462 @@
 "use client";
 
-import React, { useCallback } from "react";
-import { useChat as useAIChat, Message } from "ai/react";
-import { ChatMessage, Attachment, ChatSettings, ConversationId, MessageId } from "@/types";
-import { getStoredApiKeys } from "@/lib/api-keys";
-import { useMessages } from "./use-messages";
-import { useConversations } from "./use-conversations";
+import { useCallback, useMemo, useRef, useState, useEffect } from "react";
+import { ChatMessage, Attachment, ConversationId } from "@/types";
+import { useCreateConversation } from "./use-conversations";
 import { useUser } from "./use-user";
-// import { nanoid } from "nanoid";
+import { useThinking } from "@/providers/thinking-provider";
 
-// Extended message type to include experimental fields
-interface ExtendedMessage extends Message {
-  experimental_providerMetadata?: {
-    openai?: {
-      reasoning?: string;
-    };
-  };
-  usage?: {
-    totalTokens?: number;
-    reasoningTokens?: number;
-  };
-}
+import { useChatMessages } from "./use-chat-messages";
+
+import { useMutation, useAction, useQuery } from "convex/react";
+import { api } from "../../convex/_generated/api";
+import { Id } from "../../convex/_generated/dataModel";
 
 interface UseChatOptions {
   conversationId?: ConversationId;
-  settings: ChatSettings;
   onMessagesChange?: (messages: ChatMessage[]) => void;
   onError?: (error: Error) => void;
-  onConversationCreate?: (conversationId: ConversationId, pendingMessage?: { content: string; attachments?: Attachment[] }) => void;
+  onConversationCreate?: (conversationId: ConversationId) => void;
 }
 
 export function useChat({
   conversationId,
-  settings,
   onError,
   onConversationCreate,
 }: UseChatOptions) {
   const { user, isLoading: userLoading, canSendMessage } = useUser();
-  const { createNewConversation } = useConversations(user?._id);
-  const { messages: convexMessages, addMessage, updateMessageContent, updateMessageMetadata, deleteMessageById } = useMessages(conversationId);
-  const [currentConversationId, setCurrentConversationId] = React.useState<ConversationId | undefined>(conversationId);
-  const currentAssistantMessageIdRef = React.useRef<MessageId | null>(null);
-  const activeConversationIdRef = React.useRef<ConversationId | undefined>(conversationId);
-  
-  // Update currentConversationId when prop changes
-  React.useEffect(() => {
-    setCurrentConversationId(conversationId);
-    activeConversationIdRef.current = conversationId;
-  }, [conversationId]);
-  
-  // Convert Convex messages to ChatMessage format
-  const messages: ChatMessage[] = React.useMemo(() => {
-    return convexMessages.map(msg => ({
-      id: msg._id,
-      role: msg.role,
-      content: msg.content,
-      reasoning: msg.reasoning,
-      model: msg.model,
-      provider: msg.provider,
-      parentId: msg.parentId,
-      isMainBranch: msg.isMainBranch,
-      attachments: msg.attachments,
-      metadata: msg.metadata,
-      createdAt: msg.createdAt,
-    }));
-  }, [convexMessages]);
+  const { createNewConversationWithResponse } = useCreateConversation();
+  const { setIsThinking } = useThinking();
 
-  const {
-    messages: aiMessages,
-    append,
-    reload,
-    stop,
-    isLoading: aiIsLoading,
-    error,
-  } = useAIChat({
-    api: "/api/chat",
-    initialMessages: messages.map(msg => ({
-      id: msg.id,
-      role: msg.role,
-      content: msg.content,
-    })),
-    body: {
-      model: settings.model,
-      provider: settings.provider,
-      apiKey: getStoredApiKeys()[settings.provider as keyof ReturnType<typeof getStoredApiKeys>],
-      temperature: settings.temperature,
-      maxTokens: settings.maxTokens,
-      topP: settings.topP,
-      frequencyPenalty: settings.frequencyPenalty,
-      presencePenalty: settings.presencePenalty,
-      enableReasoning: settings.enableReasoning,
-    },
-    onFinish: async (message) => {
-      // Create the assistant message in Convex after streaming is complete
-      const extendedMessage = message as ExtendedMessage;
-      console.log("✅ Message finished streaming:", {
-        contentLength: message.content.length,
-        reasoning: extendedMessage.experimental_providerMetadata?.openai?.reasoning,
-        usage: extendedMessage.usage
-      });
-      
-      // Use the ref to get the most current conversation ID
-      const conversationId = activeConversationIdRef.current;
-      if (!conversationId) {
-        console.error("No conversation ID available to save message");
-        return;
-      }
-      
-      try {
-        // Create the assistant message in Convex with final content
-        const assistantMessageId = await addMessage({
-          conversationId,
-          role: "assistant",
-          content: message.content,
-          reasoning: extendedMessage.experimental_providerMetadata?.openai?.reasoning,
-          model: settings.model,
-          provider: settings.provider,
-          isMainBranch: true,
-        });
-        
-        // Update metadata if available
-        if (extendedMessage.usage && assistantMessageId) {
-          console.log("💾 Saving metadata:", extendedMessage.usage);
-          await updateMessageMetadata(assistantMessageId, {
-            tokenCount: extendedMessage.usage.totalTokens,
-            reasoningTokenCount: extendedMessage.usage.reasoningTokens,
-          });
-        }
-        
-        console.log("✅ Successfully saved message to Convex");
-      } catch (error) {
-        console.error("❌ Failed to save message to Convex:", error);
-      }
-    },
-    onError: (error) => {
-      console.error("Chat error:", error);
-      onError?.(error);
-    },
+  // Use specialized hooks
+
+  const chatMessages = useChatMessages({
+    conversationId,
+    onError,
   });
 
-  // Merge Convex messages with AI streaming messages
-  const displayMessages: ChatMessage[] = React.useMemo(() => {
-    // Always start with Convex messages (excluding empty assistant placeholders)
-    const convexMessagesWithoutPlaceholders = messages.filter(m => 
-      !(m.role === "assistant" && (!m.content || m.content === ""))
-    );
-    
-    // If we have streaming messages, merge them in
-    if (aiMessages.length > 0) {
-      console.log("🚀 Processing AI messages:", { 
-        convexCount: convexMessagesWithoutPlaceholders.length, 
-        aiCount: aiMessages.length,
-        isLoading: aiIsLoading,
-        latestAiMessage: aiMessages[aiMessages.length - 1]?.content?.substring(0, 50) + "...",
-        latestAiMessageId: aiMessages[aiMessages.length - 1]?.id
-      });
-      
-      // Convert AI messages to ChatMessage format
-      const streamingMessages: ChatMessage[] = [];
-      aiMessages.forEach(aiMsg => {
-        // Skip data messages  
-        if (aiMsg.role === "data") return;
-        
-        const extendedMsg = aiMsg as ExtendedMessage;
-        
-        // Convert AI message to ChatMessage format
-        if (aiMsg.role === "assistant" || aiMsg.role === "user") {
-          streamingMessages.push({
-            id: aiMsg.id,
-            role: aiMsg.role,
-            content: aiMsg.content,
-            reasoning: extendedMsg.experimental_providerMetadata?.openai?.reasoning,
-            model: settings.model,
-            provider: settings.provider,
-            parentId: undefined,
-            isMainBranch: true,
-            attachments: undefined,
-            metadata: undefined,
-            createdAt: Date.now(),
-          });
-        }
-      });
-      
-      // Merge: Convex messages + streaming messages (removing duplicates by ID)
-      const allMessages = [...convexMessagesWithoutPlaceholders];
-      streamingMessages.forEach(streamMsg => {
-        const existingIndex = allMessages.findIndex(m => m.id === streamMsg.id);
-        if (existingIndex >= 0) {
-          // Update existing message with streaming content
-          allMessages[existingIndex] = streamMsg;
-        } else {
-          // Add new streaming message
-          allMessages.push(streamMsg);
-        }
-      });
-      
-      console.log("📝 Final display messages:", allMessages.length, "Last message content:", allMessages[allMessages.length - 1]?.content?.substring(0, 50) + "...");
-      return allMessages;
-    }
-    
-    // Show Convex messages when no streaming
-    console.log("💾 Showing Convex messages:", convexMessagesWithoutPlaceholders.length);
-    return convexMessagesWithoutPlaceholders;
-  }, [aiMessages, messages, aiIsLoading, settings.model, settings.provider]);
+  // Centralized Convex actions
+  const sendFollowUpMessageAction = useAction(
+    api.conversations.sendFollowUpMessage
+  );
+  const retryFromMessageAction = useAction(api.conversations.retryFromMessage);
+  const editMessageAction = useAction(api.conversations.editMessage);
+  const stopGenerationAction = useAction(api.conversations.stopGeneration);
+  const resumeConversationAction = useAction(
+    api.conversations.resumeConversation
+  );
+  const selectedModel = useQuery(api.userModels.getUserSelectedModel);
+  const addMessage = useMutation(api.messages.create);
 
-  const sendMessage = useCallback(async (
-    content: string,
-    attachments?: Attachment[]
-  ) => {
-    console.log("🚀 sendMessage called with:", { content, attachments, user: user?._id, currentConversationId });
-    
-    if (!content.trim() && !attachments?.length) {
-      console.log("❌ Early return: no content or attachments");
-      return;
-    }
+  // State management
+  const [currentConversationId, setCurrentConversationId] = useState<
+    ConversationId | undefined
+  >(conversationId);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const hasAttemptedResumeRef = useRef<string | null>(null);
 
-    // Check if user can send message (message limit for anonymous users)
-    if (!canSendMessage) {
-      console.log("❌ Early return: message limit reached");
-      onError?.(new Error("Message limit reached. Please sign in to continue chatting."));
-      return;
+  // Update conversation ID tracking when prop changes
+  useEffect(() => {
+    setCurrentConversationId(conversationId);
+    if (conversationId !== hasAttemptedResumeRef.current) {
+      hasAttemptedResumeRef.current = null;
     }
-    
-    // Wait for user to be available (user might still be loading)
-    if (!user?._id) {
-      if (userLoading) {
-        console.log("⏳ User still loading, waiting...");
-        // Retry after a short delay to allow user loading to complete
-        setTimeout(() => {
-          console.log("🔄 Retrying sendMessage after user loading");
-          sendMessage(content, attachments);
-        }, 200);
-        return;
-      } else {
-      console.log("❌ Early return: no user and not loading");
-      return;
+  }, [conversationId]);
+
+  const withLoadingState = useCallback(
+    async <T>(operation: () => Promise<T>): Promise<T> => {
+      try {
+        setIsGenerating(true);
+        setIsThinking(true);
+        return await operation();
+      } finally {
+        setIsGenerating(false);
+        setIsThinking(false);
       }
-    }
+    },
+    [setIsThinking]
+  );
 
-    // Check if we have the required API key
-    const apiKeys = getStoredApiKeys();
-    const requiredKey = apiKeys[settings.provider as keyof typeof apiKeys];
-    console.log("🔑 API key check:", { provider: settings.provider, hasKey: !!requiredKey });
-    
-    if (!requiredKey) {
-      console.log("❌ Early return: no API key for provider:", settings.provider);
-      onError?.(new Error(`No API key found for ${settings.provider}`));
+  // Auto-resume conversation logic
+  useEffect(() => {
+    if (
+      !conversationId ||
+      !selectedModel ||
+      hasAttemptedResumeRef.current === conversationId ||
+      isGenerating
+    ) {
       return;
     }
 
-    try {
-      let conversationId = currentConversationId;
-      console.log("💬 Conversation check:", { currentConversationId, hasOnConversationCreate: !!onConversationCreate });
-      
-      // Create a new conversation if we don't have one
-      if (!conversationId) {
-        console.log("🆕 No conversation ID, creating new conversation");
-        const newConversationId = await createNewConversation(content);
-        if (newConversationId) {
-          conversationId = newConversationId;
-          setCurrentConversationId(newConversationId);
-          activeConversationIdRef.current = newConversationId;
-          
-          // ✨ Trigger immediate redirect, message will be sent on conversation page
-          if (onConversationCreate) {
-            console.log("🔄 Redirecting immediately, message will be sent on conversation page:", newConversationId);
-            onConversationCreate(newConversationId, { content, attachments });
-            return; // Exit here, message will be sent on the conversation page
-          }
-          
-          console.log("📝 Created new conversation:", newConversationId);
+    const lastMessage =
+      chatMessages.convexMessages?.[chatMessages.convexMessages.length - 1];
+    if (chatMessages.convexMessages?.length && lastMessage?.role === "user") {
+      hasAttemptedResumeRef.current = conversationId;
+
+      const startResponse = async () => {
+        try {
+          await withLoadingState(() =>
+            resumeConversationAction({
+              conversationId,
+            })
+          );
+        } catch (error) {
+          hasAttemptedResumeRef.current = null;
+          onError?.(error as Error);
         }
-      } else {
-        console.log("✅ Using existing conversation:", conversationId);
-      }
-
-      if (!conversationId) {
-        onError?.(new Error("Failed to create conversation"));
-        return;
-      }
-
-      // Add user message to Convex
-      const userMessageId = await addMessage({
-        conversationId,
-        role: "user",
-        content,
-        attachments,
-        isMainBranch: true,
-      });
-
-      // Don't create placeholder - let streaming show directly, then save on finish
-      currentAssistantMessageIdRef.current = null;
-
-      const userMessage = {
-        id: userMessageId as string,
-        role: "user" as const,
-        content,
       };
 
-      await append(userMessage);
-    } catch (error) {
-      console.error("Error sending message:", error);
-      onError?.(error as Error);
+      startResponse();
     }
-  }, [user?._id, userLoading, canSendMessage, currentConversationId, createNewConversation, addMessage, settings, append, onError, onConversationCreate]);
+  }, [
+    conversationId,
+    chatMessages.convexMessages,
+    selectedModel,
+    isGenerating,
+    resumeConversationAction,
+    withLoadingState,
+    onError,
+  ]);
 
-  const regenerateMessage = useCallback(async () => {
-    await reload();
-  }, [reload]);
+  const sendMessage = useCallback(
+    async (
+      content: string,
+      attachments?: Attachment[],
+      useWebSearch?: boolean,
+      personaPrompt?: string | null,
+      personaId?: Id<"personas"> | null
+    ) => {
+      if (!content.trim() && !attachments?.length) return;
 
-  const clearMessages = useCallback(() => {
-    // For now, we'll keep messages in Convex but could implement deletion
-    console.log("Clear messages - conversation will remain in Convex");
-  }, []);
+      if (!canSendMessage) {
+        onError?.(
+          new Error(
+            "Message limit reached. Please sign in to continue chatting."
+          )
+        );
+        return;
+      }
 
-  const stopGeneration = useCallback(() => {
-    stop();
-  }, [stop]);
+      if (!user && userLoading) {
+        setTimeout(() => sendMessage(content, attachments), 200);
+        return;
+      }
 
-  const editMessage = useCallback(async (messageId: string, newContent: string) => {
-    if (!user?._id || !currentConversationId) return;
+      try {
+        let conversationId = currentConversationId;
 
-    try {
-      // Update the message content
-      await updateMessageContent(messageId as MessageId, newContent);
+        // Create new conversation if needed
+        if (!conversationId) {
+          const newConversationId = await createNewConversationWithResponse(
+            content,
+            undefined,
+            personaId,
+            user?._id,
+            attachments,
+            useWebSearch,
+            personaPrompt
+          );
+          if (!newConversationId) {
+            throw new Error("Failed to create conversation");
+          }
 
-      // Find the message index to delete all messages after it
-      const messageIndex = messages.findIndex(m => m.id === messageId);
-      if (messageIndex !== -1) {
-        // Delete all messages after the edited one
-        const messagesToDelete = messages.slice(messageIndex + 1);
-        for (const message of messagesToDelete) {
-          await deleteMessageById(message.id as MessageId);
+          // For new conversations, navigate immediately - the Convex action handles the assistant response
+          if (onConversationCreate) {
+            onConversationCreate(newConversationId);
+            return;
+          }
+
+          conversationId = newConversationId;
+          setCurrentConversationId(newConversationId);
+          return;
         }
 
-        // Create a new assistant response
-        const assistantMessageId = await addMessage({
-          conversationId: currentConversationId,
-          role: "assistant",
-          content: "",
-          model: settings.model,
-          provider: settings.provider,
-          isMainBranch: true,
-        });
-
-        // Store the assistant message ID for the onFinish callback
-        currentAssistantMessageIdRef.current = assistantMessageId;
-
-        // Trigger a new response with the updated message history
-        const userMessage = {
-          id: messageId,
-          role: "user" as const,
-          content: newContent,
-        };
-
-        await append(userMessage);
+        // For existing conversations, use the centralized Convex action
+        if (selectedModel) {
+          await withLoadingState(() =>
+            sendFollowUpMessageAction({
+              conversationId,
+              content,
+              attachments,
+              useWebSearch,
+              model: selectedModel.modelId,
+              provider: selectedModel.provider,
+            })
+          );
+        } else {
+          throw new Error("No model selected");
+        }
+      } catch (error) {
+        onError?.(error as Error);
       }
+    },
+    [
+      canSendMessage,
+      onError,
+      user,
+      userLoading,
+      currentConversationId,
+      createNewConversationWithResponse,
+      onConversationCreate,
+      selectedModel,
+      sendFollowUpMessageAction,
+      withLoadingState,
+    ]
+  );
+
+  const sendMessageToNewConversation = useCallback(
+    async (
+      content: string,
+      attachments?: Attachment[],
+      shouldNavigate: boolean = true,
+      contextSummary?: string,
+      sourceConversationId?: ConversationId,
+      personaPrompt?: string | null,
+      personaId?: Id<"personas"> | null
+    ) => {
+      if (!content.trim() && !attachments?.length) return;
+
+      if (!canSendMessage) {
+        onError?.(
+          new Error(
+            "Message limit reached. Please sign in to continue chatting."
+          )
+        );
+        return;
+      }
+
+      if (!user && userLoading) {
+        setTimeout(
+          () =>
+            sendMessageToNewConversation(content, attachments, shouldNavigate),
+          200
+        );
+        return;
+      }
+
+      try {
+        // Use the new function that starts the assistant response immediately
+        const newConversationId = await createNewConversationWithResponse(
+          content,
+          sourceConversationId,
+          personaId,
+          user?._id,
+          attachments,
+          false, // don't use web search for new conversations by default
+          personaPrompt
+        );
+        if (!newConversationId) {
+          throw new Error("Failed to create conversation");
+        }
+
+        // Add context message if provided
+        if (contextSummary && sourceConversationId) {
+          await addMessage({
+            conversationId: newConversationId,
+            role: "context",
+            content: contextSummary,
+            sourceConversationId,
+            isMainBranch: true,
+          });
+        }
+
+        if (shouldNavigate && onConversationCreate) {
+          onConversationCreate(newConversationId);
+        }
+
+        return newConversationId;
+      } catch (error) {
+        onError?.(error as Error);
+      }
+    },
+    [
+      canSendMessage,
+      onError,
+      user,
+      userLoading,
+      createNewConversationWithResponse,
+      addMessage,
+      onConversationCreate,
+    ]
+  );
+
+  const regenerateMessage = useCallback(async () => {
+    if (!currentConversationId || !selectedModel) return;
+
+    // Find the last user message to retry from
+    const lastUserMessage = chatMessages.convexMessages
+      ?.filter(msg => msg.role === "user")
+      .pop();
+
+    if (!lastUserMessage) return;
+
+    try {
+      await withLoadingState(() =>
+        retryFromMessageAction({
+          conversationId: currentConversationId,
+          messageId: lastUserMessage._id,
+          retryType: "user",
+          model: selectedModel.modelId,
+          provider: selectedModel.provider,
+        })
+      );
     } catch (error) {
-      console.error("Error editing message:", error);
       onError?.(error as Error);
     }
-  }, [user?._id, currentConversationId, updateMessageContent, messages, deleteMessageById, addMessage, settings, append, onError]);
+  }, [
+    currentConversationId,
+    selectedModel,
+    chatMessages.convexMessages,
+    retryFromMessageAction,
+    withLoadingState,
+    onError,
+  ]);
+
+  const stopGeneration = useCallback(async () => {
+    if (currentConversationId) {
+      try {
+        await stopGenerationAction({
+          conversationId: currentConversationId,
+        });
+      } catch (error) {
+        console.error("Failed to stop generation:", error);
+      }
+    }
+    setIsGenerating(false);
+    setIsThinking(false);
+  }, [
+    currentConversationId,
+    stopGenerationAction,
+    setIsGenerating,
+    setIsThinking,
+  ]);
+
+  const editMessage = useCallback(
+    async (messageId: string, newContent: string) => {
+      if (!currentConversationId || !selectedModel) return;
+
+      try {
+        await withLoadingState(() =>
+          editMessageAction({
+            conversationId: currentConversationId,
+            messageId: messageId as Id<"messages">,
+            newContent,
+            model: selectedModel.modelId,
+            provider: selectedModel.provider,
+          })
+        );
+      } catch (error) {
+        onError?.(error as Error);
+      }
+    },
+    [
+      currentConversationId,
+      selectedModel,
+      editMessageAction,
+      withLoadingState,
+      onError,
+    ]
+  );
+
+  const retryUserMessage = useCallback(
+    async (messageId: string) => {
+      if (!currentConversationId || !selectedModel) return;
+
+      try {
+        await withLoadingState(() =>
+          retryFromMessageAction({
+            conversationId: currentConversationId,
+            messageId: messageId as Id<"messages">,
+            retryType: "user",
+            model: selectedModel.modelId,
+            provider: selectedModel.provider,
+          })
+        );
+      } catch (error) {
+        onError?.(error as Error);
+      }
+    },
+    [
+      currentConversationId,
+      selectedModel,
+      retryFromMessageAction,
+      withLoadingState,
+      onError,
+    ]
+  );
+
+  const retryAssistantMessage = useCallback(
+    async (messageId: string) => {
+      if (!currentConversationId || !selectedModel) return;
+
+      try {
+        await withLoadingState(() =>
+          retryFromMessageAction({
+            conversationId: currentConversationId,
+            messageId: messageId as Id<"messages">,
+            retryType: "assistant",
+            model: selectedModel.modelId,
+            provider: selectedModel.provider,
+          })
+        );
+      } catch (error) {
+        onError?.(error as Error);
+      }
+    },
+    [
+      currentConversationId,
+      selectedModel,
+      retryFromMessageAction,
+      withLoadingState,
+      onError,
+    ]
+  );
+
+  const clearMessages = useCallback(() => {
+    // Keep messages in Convex - could implement deletion if needed
+  }, []);
+
+  // Computed values
+  const hasStreamingContent = useMemo(() => {
+    return chatMessages.messages.some(
+      msg =>
+        msg.role === "assistant" &&
+        msg.content &&
+        chatMessages.isMessageStreaming(msg.id, isGenerating)
+    );
+  }, [chatMessages.messages, chatMessages.isMessageStreaming, isGenerating]);
+
+  const isStreamingInCurrentConversation = useMemo(() => {
+    if (!currentConversationId) return false;
+
+    // Check if there's any assistant message without a finish reason (still streaming)
+    const streamingMessage = chatMessages.convexMessages?.find(
+      msg =>
+        msg.conversationId === currentConversationId &&
+        msg.role === "assistant" &&
+        !msg.metadata?.finishReason
+    );
+
+    return !!streamingMessage;
+  }, [currentConversationId, chatMessages.convexMessages]);
 
   return {
-    messages: displayMessages,
+    messages: chatMessages.messages,
     conversationId: currentConversationId,
-    isLoading: aiIsLoading,
-    error,
+    isLoading: isGenerating,
+    isLoadingMessages: chatMessages.isLoadingMessages,
+    error: null,
     sendMessage,
+    sendMessageToNewConversation,
     regenerateMessage,
     clearMessages,
     stopGeneration,
     editMessage,
+    retryUserMessage,
+    retryAssistantMessage,
+    deleteMessage: chatMessages.deleteMessage,
+    expectingStream: false,
+    hasStreamingContent,
+    isStreaming: isStreamingInCurrentConversation,
   };
 }

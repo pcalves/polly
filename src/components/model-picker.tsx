@@ -1,280 +1,464 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
-import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectLabel,
-  SelectTrigger,
-  SelectValue,
-  SelectGroup,
-  SelectSeparator,
-} from "@/components/ui/select";
-import { 
+import { useMemo, useState, useCallback, memo } from "react";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
   Tooltip,
   TooltipContent,
-  TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { 
-  Brain, 
-  Eye, 
-  Wrench, 
-  Zap, 
-  FileText, 
-  Code2,
-  Sparkles
+import { Button } from "@/components/ui/button";
+import {
+  Search,
+  AlertCircle,
+  ChevronDown,
+  Sparkles,
+  MessageSquare,
+  Key,
+  Zap,
 } from "lucide-react";
-import { AI_PROVIDERS, fetchOpenRouterModels, getModelById, initializeProviders } from "@/lib/providers";
-import { AIModel } from "@/types";
-import { hasApiKey } from "@/lib/api-keys";
-import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
+import { useRouter } from "next/navigation";
 
-// Capability detection - moved outside component for stability
-const getModelCapabilities = (model: AIModel) => {
-  const capabilities = [];
-  
-  // Reasoning models (thinking/chain-of-thought capabilities)
-  if (model.id.includes("claude") || 
-      model.id.includes("gpt-4") || 
-      model.id.includes("gemini-2.5") || 
-      model.id.includes("deepseek-r1") ||
-      model.id.includes("o1")) {
-    capabilities.push({ icon: Brain, label: "Advanced Reasoning", description: "Chain-of-thought and complex reasoning" });
+import { AIModel } from "@/types";
+import { cn } from "@/lib/utils";
+import {
+  getModelCapabilities,
+  getCapabilityColor,
+} from "@/lib/model-capabilities";
+import { useMutation, useQuery } from "convex/react";
+import { api } from "../../convex/_generated/api";
+import { useUser } from "@/hooks/use-user";
+import { ProviderIcon } from "@/components/provider-icons";
+
+// Provider mapping with titles and icons
+const PROVIDER_CONFIG = {
+  openai: { title: "OpenAI", icon: "openai" },
+  anthropic: { title: "Anthropic", icon: "anthropic" },
+  google: { title: "Google AI", icon: "google" },
+  openrouter: { title: "OpenRouter", icon: "openrouter" },
+  polly: { title: "Polly", icon: "polly" },
+} as const;
+
+// Polly icon component using the favicon
+const PollyIcon = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="16"
+    height="16"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className="w-4 h-4"
+  >
+    <path d="M16 7h.01"></path>
+    <path d="M3.4 18H12a8 8 0 0 0 8-8V7a4 4 0 0 0-7.28-2.3L2 20"></path>
+    <path d="m20 7 2 .5-2 .5"></path>
+    <path d="M10 18v3"></path>
+    <path d="M14 17.75V21"></path>
+    <path d="M7 18a6 6 0 0 0 3.84-10.61"></path>
+  </svg>
+);
+
+// Enhanced ProviderIcon component that handles Polly and standardizes sizing
+const EnhancedProviderIcon = ({ provider }: { provider: string }) => {
+  if (provider === "polly") {
+    return <PollyIcon />;
   }
-  
-  // Image understanding
-  if (model.supportsImages) {
-    capabilities.push({ icon: Eye, label: "Vision", description: "Can analyze images and visual content" });
-  }
-  
-  // Tools/Function calling
-  if (model.supportsTools) {
-    capabilities.push({ icon: Wrench, label: "Tools", description: "Can call functions and use external tools" });
-  }
-  
-  // Fast models (smaller parameter count, good for quick responses)
-  if (model.id.includes("mini") || 
-      model.id.includes("flash") || 
-      model.id.includes("haiku") ||
-      model.contextLength < 50000) {
-    capabilities.push({ icon: Zap, label: "Fast", description: "Quick responses, lower latency" });
-  }
-  
-  // Large context (>100k tokens)
-  if (model.contextLength >= 100000) {
-    capabilities.push({ icon: FileText, label: "Large Context", description: `${(model.contextLength / 1000).toFixed(0)}K context window` });
-  }
-  
-  // Coding specialists
-  if (model.id.includes("code") || 
-      model.id.includes("deepseek") ||
-      model.id.includes("claude")) {
-    capabilities.push({ icon: Code2, label: "Coding", description: "Excellent for programming tasks" });
-  }
-  
-  // Latest/newest models
-  if (model.id.includes("2.5") || 
-      model.id.includes("4o") ||
-      model.id.includes("2024") ||
-      model.id.includes("2025")) {
-    capabilities.push({ icon: Sparkles, label: "Latest", description: "Newest model version" });
-  }
-  
-  return capabilities;
+  return (
+    <div className="w-4 h-4 flex items-center justify-center">
+      <ProviderIcon provider={provider} />
+    </div>
+  );
 };
 
+// Memoized model item component
+const ModelItem = memo(
+  ({
+    model,
+    onSelect,
+  }: {
+    model: AIModel;
+    onSelect: (value: string) => void;
+  }) => {
+    const capabilities = useMemo(() => getModelCapabilities(model), [model]);
+
+    const handleSelect = useCallback(() => {
+      onSelect(model.modelId);
+    }, [model.modelId, onSelect]);
+
+    return (
+      <CommandItem
+        key={model.modelId}
+        value={`${model.name} ${model.provider} ${model.modelId}`}
+        onSelect={handleSelect}
+        className="py-2.5 px-3 cursor-pointer"
+      >
+        <div className="flex items-center justify-between w-full">
+          <div className="flex items-center gap-2 min-w-0 flex-1">
+            {model.free && (
+              <Badge
+                variant="secondary"
+                className="text-[10px] px-1.5 py-0 h-5 bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-800 shrink-0"
+              >
+                Free
+              </Badge>
+            )}
+            <span className={cn("font-medium text-sm truncate")}>
+              {model.name}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-1 shrink-0">
+            {capabilities.length > 0 &&
+              capabilities.slice(0, 4).map((capability, index) => {
+                const IconComponent = capability.icon;
+                return (
+                  <Tooltip
+                    key={`${model.modelId}-${capability.label}-${index}`}
+                  >
+                    <TooltipTrigger asChild>
+                      <div className="flex items-center justify-center w-6 h-6 rounded-lg bg-muted/40 hover:bg-muted/70 transition-colors cursor-help">
+                        <IconComponent
+                          className={cn(
+                            "w-3.5 h-3.5",
+                            getCapabilityColor(capability.label)
+                          )}
+                        />
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom">
+                      <div>
+                        <div className="font-semibold text-foreground">
+                          {capability.label}
+                        </div>
+                        <div className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                          {capability.description}
+                        </div>
+                      </div>
+                    </TooltipContent>
+                  </Tooltip>
+                );
+              })}
+          </div>
+        </div>
+      </CommandItem>
+    );
+  }
+);
+
+ModelItem.displayName = "ModelItem";
+
 interface ModelPickerProps {
-  value: string;
-  onChange: (modelId: string) => void;
+  className?: string;
 }
 
-export function ModelPicker({ value, onChange }: ModelPickerProps) {
-  const [openRouterModels, setOpenRouterModels] = useState<AIModel[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+function ModelPickerComponent({ className }: ModelPickerProps) {
+  const [open, setOpen] = useState(false);
+  const { isAnonymous } = useUser();
+  const router = useRouter();
 
-  useEffect(() => {
-    if (!hasApiKey("openrouter") || openRouterModels.length > 0) {
-      return;
+  const userModelsByProvider = useQuery(api.userModels.getUserModelsByProvider);
+  const selectedModel = useQuery(api.userModels.getUserSelectedModel);
+  const selectModelMutation = useMutation(api.userModels.selectModel);
+
+  // Simple display name getter
+  const displayName = useMemo(() => {
+    if (isAnonymous) {
+      return "Gemini 2.5 Flash Lite";
     }
+    return selectedModel?.name || "Select model";
+  }, [selectedModel, isAnonymous]);
 
-    const loadModels = async () => {
-      setIsLoading(true);
-      try {
-        await initializeProviders();
-        
-        if (hasApiKey("openrouter")) {
-          const models = await fetchOpenRouterModels();
-          setOpenRouterModels(models);
-        }
-      } catch (error) {
-        console.error("Failed to load models:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadModels();
-  }, [openRouterModels.length]);
-
-  // Find selected model including OpenRouter models
-  const selectedModel = useMemo(() => 
-    getModelById(value) || openRouterModels.find(m => m.id === value),
-    [value, openRouterModels]
+  // Handle model selection
+  const handleSelect = useCallback(
+    (modelId: string) => {
+      selectModelMutation({ modelId });
+      setOpen(false);
+    },
+    [selectModelMutation]
   );
 
-  // Memoize selected model capabilities to prevent infinite re-renders
-  const selectedModelCapabilities = useMemo(() => 
-    selectedModel ? getModelCapabilities(selectedModel) : [],
-    [selectedModel]
-  );
+  // Show loading state
+  if (!userModelsByProvider && !isAnonymous) {
+    return (
+      <Button
+        variant="ghost"
+        className={cn(
+          "h-auto text-xs font-medium text-muted-foreground/80 group disabled:opacity-60",
+          className
+        )}
+        disabled
+      >
+        <span className="text-xs font-medium text-muted-foreground transition-colors">
+          Loading models...
+        </span>
+        <ChevronDown className="ml-1.5 h-3 w-3 text-muted-foreground transition-colors shrink-0" />
+      </Button>
+    );
+  }
+
+  // Anonymous user case - show default model but allow opening for upsell
+  if (isAnonymous) {
+    return (
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            variant="ghost"
+            role="combobox"
+            aria-expanded={open}
+            className={cn(
+              "h-auto text-xs font-medium text-muted-foreground/80 hover:text-foreground group",
+              className
+            )}
+          >
+            <Sparkles className="h-3.5 w-3.5 text-emerald-500 transition-colors" />
+            <span className="ml-1.5 text-xs font-medium text-muted-foreground group-hover:text-foreground transition-colors truncate">
+              {displayName}
+            </span>
+            <ChevronDown
+              className={cn(
+                "ml-1.5 h-3 w-3 text-muted-foreground group-hover:text-foreground transition-all duration-200 shrink-0",
+                open && "rotate-180"
+              )}
+            />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent
+          className="w-[480px] p-0 overflow-hidden"
+          align="start"
+          side="top"
+          sideOffset={8}
+          alignOffset={-12}
+        >
+          {/* Subtle background overlay */}
+          <div className="absolute inset-0 bg-accent-emerald/3 pointer-events-none" />
+
+          <div className="relative p-8 text-center">
+            {/* Sparkle icon with consistent accent color */}
+            <div className="w-16 h-16 rounded-full bg-accent-emerald flex items-center justify-center mx-auto mb-5 shadow-lg shadow-accent-emerald/25">
+              <Sparkles className="h-8 w-8 text-white" />
+            </div>
+
+            {/* Refined headline */}
+            <h3 className="text-lg font-bold mb-2 text-foreground">
+              Unlock Premium Features
+            </h3>
+
+            {/* Professional description */}
+            <p className="text-sm text-muted-foreground leading-relaxed mb-5 font-medium">
+              Sign in to access increased message limits, bring your own API
+              keys, and unlock advanced features for a better AI experience.
+            </p>
+
+            {/* Feature cards - improved colors */}
+            <div className="space-y-4 mb-8">
+              <div className="flex items-center gap-4 p-4 rounded-lg bg-muted/30 dark:bg-muted/20 border border-border/40 hover:border-accent-emerald/40 hover:bg-accent-emerald/5 dark:hover:bg-accent-emerald/10 transition-colors duration-200">
+                <div className="w-10 h-10 rounded-full bg-accent-emerald flex items-center justify-center shadow-md">
+                  <MessageSquare className="h-5 w-5 text-white" />
+                </div>
+                <div className="text-left flex-1">
+                  <div className="text-base font-bold text-foreground">
+                    Higher Message Limits
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    More conversations per day
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-4 p-4 rounded-lg bg-muted/30 dark:bg-muted/20 border border-border/40 hover:border-accent-emerald/40 hover:bg-accent-emerald/5 dark:hover:bg-accent-emerald/10 transition-colors duration-200">
+                <div className="w-10 h-10 rounded-full bg-accent-emerald flex items-center justify-center shadow-md">
+                  <Key className="h-5 w-5 text-white" />
+                </div>
+                <div className="text-left flex-1">
+                  <div className="text-base font-bold text-foreground">
+                    Bring Your Own API Keys
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    Connect your own OpenAI, Anthropic & Google keys
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-4 p-4 rounded-lg bg-muted/30 dark:bg-muted/20 border border-border/40 hover:border-accent-emerald/40 hover:bg-accent-emerald/5 dark:hover:bg-accent-emerald/10 transition-colors duration-200">
+                <div className="w-10 h-10 rounded-full bg-accent-emerald flex items-center justify-center shadow-md">
+                  <Zap className="h-5 w-5 text-white" />
+                </div>
+                <div className="text-left flex-1">
+                  <div className="text-base font-bold text-foreground">
+                    Advanced Features
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    Custom personas, conversation sharing & more
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* CTA button with consistent accent color */}
+            <Button
+              size="lg"
+              className="w-full bg-accent-emerald hover:bg-accent-emerald/90 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-200 text-base font-semibold py-4"
+              onClick={() => router.push("/auth")}
+            >
+              Sign In
+            </Button>
+
+            {/* Incentive text with consistent colors */}
+            <p className="text-xs text-muted-foreground mt-3 font-medium">
+              <span className="text-accent-emerald font-semibold">
+                Free to sign up
+              </span>{" "}
+              •{" "}
+              <span className="text-accent-emerald/80 font-semibold">
+                No credit card required
+              </span>
+            </p>
+          </div>
+        </PopoverContent>
+      </Popover>
+    );
+  }
+
+  // Show initial setup message if no models are stored (signed-in users)
+  if (userModelsByProvider?.length === 0) {
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="ghost"
+            className={cn(
+              "h-auto text-xs font-medium text-muted-foreground/80 group disabled:opacity-60",
+              className
+            )}
+            disabled
+          >
+            <AlertCircle className="h-3.5 w-3.5 text-muted-foreground transition-colors" />
+            <span className="ml-1.5 text-xs font-medium text-muted-foreground transition-colors">
+              Configure models
+            </span>
+            <ChevronDown className="ml-1.5 h-3 w-3 text-muted-foreground transition-colors shrink-0" />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>
+          <p>Go to Settings → Models to load available models</p>
+        </TooltipContent>
+      </Tooltip>
+    );
+  }
 
   return (
-    <TooltipProvider>
-      <Select value={value} onValueChange={onChange}>
-        <SelectTrigger className="w-full border-0 bg-transparent p-0 shadow-none focus:ring-0 h-auto">
-          <SelectValue>
-            {selectedModel ? (
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-medium text-muted-foreground hover:text-foreground">
-                  {selectedModel.name.split(' ')[0]} {/* Show just first part of name */}
-                </span>
-                {/* Show just 1 key capability icon */}
-                {selectedModelCapabilities.length > 0 && (
-                  <div className="flex items-center">
-                    {(() => {
-                      const capability = selectedModelCapabilities[0];
-                      const IconComponent = capability.icon;
-                      return (
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <div className="flex items-center justify-center">
-                              <IconComponent className="w-3 h-3 text-muted-foreground/60" />
-                            </div>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <div className="text-center">
-                              <div className="font-medium">{capability.label}</div>
-                              <div className="text-xs text-muted-foreground">{capability.description}</div>
-                            </div>
-                          </TooltipContent>
-                        </Tooltip>
-                      );
-                    })()}
-                  </div>
-                )}
-              </div>
-            ) : (
-              <span className="text-sm font-medium text-muted-foreground">Select model</span>
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="ghost"
+          role="combobox"
+          aria-expanded={open}
+          className={cn(
+            "h-auto text-xs font-medium text-muted-foreground/80 hover:text-foreground group",
+            className
+          )}
+        >
+          {selectedModel?.free && (
+            <Badge
+              variant="secondary"
+              className="mr-2 text-[10px] px-1.5 py-0 h-5 bg-emerald-100 text-emerald-700 border-emerald-200 hover:bg-emerald-100 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-800"
+            >
+              Free
+            </Badge>
+          )}
+          <span className="text-xs font-medium text-muted-foreground group-hover:text-foreground transition-colors truncate">
+            {displayName}
+          </span>
+          <ChevronDown
+            className={cn(
+              "ml-1.5 h-3 w-3 text-muted-foreground group-hover:text-foreground transition-all duration-200 shrink-0",
+              open && "rotate-180"
             )}
-          </SelectValue>
-        </SelectTrigger>
-        <SelectContent className="w-[420px] max-h-[400px]">
-        {(() => {
-          const providersWithKeys = AI_PROVIDERS.filter(provider => {
-            const hasKey = hasApiKey(provider.id as keyof typeof hasApiKey);
-            // For OpenRouter, also check if we have models loaded
-            if (provider.id === "openrouter") {
-              return hasKey && (openRouterModels.length > 0 || isLoading);
-            }
-            return hasKey;
-          });
-
-          if (providersWithKeys.length === 0) {
-            return (
-              <div className="p-6 text-center">
-                <p className="text-sm text-muted-foreground mb-2">No API keys configured</p>
+          />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent
+        className="w-[380px] p-0"
+        align="start"
+        side="top"
+        sideOffset={8}
+        alignOffset={-12}
+      >
+        <Command>
+          <CommandInput placeholder="Search models..." className="h-9" />
+          <CommandList className="max-h-[350px]">
+            <CommandEmpty>
+              <div className="p-4 text-center">
+                <Search className="h-8 w-8 text-muted-foreground/50 mx-auto mb-3" />
+                <p className="text-sm text-muted-foreground mb-1">
+                  No models found
+                </p>
                 <p className="text-xs text-muted-foreground">
-                  Add API keys to use AI models
+                  Try adjusting your search terms
                 </p>
               </div>
-            );
-          }
+            </CommandEmpty>
 
-          return providersWithKeys.map((provider) => {
-            const availableModels = provider.id === "openrouter" 
-              ? openRouterModels 
-              : provider.models;
+            {userModelsByProvider?.length === 0 ? (
+              <div className="p-6 text-center">
+                <p className="text-sm text-muted-foreground mb-2">
+                  No models available
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Add API keys and configure models in Settings
+                </p>
+              </div>
+            ) : (
+              userModelsByProvider?.map((provider, providerIndex) => {
+                const providerConfig =
+                  PROVIDER_CONFIG[provider.id as keyof typeof PROVIDER_CONFIG];
+                const providerTitle = providerConfig?.title || provider.name;
+                const providerIcon = providerConfig?.icon || provider.id;
 
-            if (availableModels.length === 0 && provider.id === "openrouter" && isLoading) {
-              return (
-                <SelectGroup key={provider.id}>
-                  <SelectLabel className="text-xs font-medium text-muted-foreground/80 px-3 py-2">
-                    {provider.name}
-                  </SelectLabel>
-                  <SelectItem value="loading" disabled className="text-muted-foreground">
-                    Loading models...
-                  </SelectItem>
-                </SelectGroup>
-              );
-            }
-
-            if (availableModels.length === 0) return null;
-
-            return (
-              <SelectGroup key={provider.id}>
-                <SelectLabel className="text-xs font-medium text-muted-foreground/80 px-3 py-2">
-                  {provider.name}
-                </SelectLabel>
-                {availableModels.map(model => {
-                  const hasKey = hasApiKey(model.provider as keyof typeof hasApiKey);
-                  const capabilities = getModelCapabilities(model);
-
-                  return (
-                    <SelectItem
-                      key={model.id}
-                      value={model.id}
-                      disabled={!hasKey}
-                      className="flex flex-col items-start py-3 px-3 cursor-pointer hover:bg-muted/50 focus:bg-muted/50"
-                    >
-                      <div className="flex items-center justify-between w-full">
-                        <span className={cn(
-                          "font-medium text-sm",
-                          !hasKey ? "opacity-50" : ""
-                        )}>
-                          {model.name}
-                        </span>
-                        {!hasKey && (
-                          <span className="text-xs text-muted-foreground/60 ml-2">No API key</span>
-                        )}
-                      </div>
-                      
-                      {/* Capabilities and provider row */}
-                      <div className="flex items-center justify-between w-full mt-1">
-                        {/* Capabilities */}
-                        {capabilities.length > 0 && (
-                          <div className="flex items-center gap-1">
-                            {capabilities.slice(0, 4).map((capability, index) => {
-                              const IconComponent = capability.icon;
-                              return (
-                                <div 
-                                  key={`${model.id}-${capability.label}-${index}`}
-                                  className="flex items-center justify-center w-3 h-3" 
-                                  title={`${capability.label}: ${capability.description}`}
-                                >
-                                  <IconComponent className="w-2.5 h-2.5 text-muted-foreground/60" />
-                                </div>
-                              );
-                            })}
-                          </div>
-                        )}
-                        
-                        {/* Provider */}
-                        <span className="text-xs text-muted-foreground/60 capitalize">
-                          {model.provider}
-                        </span>
-                      </div>
-                    </SelectItem>
-                  );
-                })}
-                {provider !== providersWithKeys[providersWithKeys.length - 1] && <SelectSeparator className="my-1" />}
-              </SelectGroup>
-            );
-          });
-        })()}
-      </SelectContent>
-    </Select>
-    </TooltipProvider>
+                return (
+                  <CommandGroup key={provider.id}>
+                    <div className="flex items-center gap-2 px-2 py-1.5">
+                      <EnhancedProviderIcon provider={providerIcon} />
+                      <span className="text-xs font-medium text-muted-foreground">
+                        {providerTitle}
+                      </span>
+                    </div>
+                    {provider.models.map((model: AIModel) => (
+                      <ModelItem
+                        key={model.modelId}
+                        model={model}
+                        onSelect={handleSelect}
+                      />
+                    ))}
+                    {providerIndex < userModelsByProvider.length - 1 && (
+                      <div className="h-px bg-border mx-2 my-1" />
+                    )}
+                  </CommandGroup>
+                );
+              }) || []
+            )}
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
   );
 }
+
+export const ModelPicker = memo(ModelPickerComponent);
