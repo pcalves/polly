@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
-import { useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   Tooltip,
   TooltipContent,
@@ -23,10 +23,18 @@ export function ThemeToggle({
   className,
 }: ThemeToggleProps) {
   const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const toggleTheme = useCallback(() => {
     setTheme(theme === "dark" ? "light" : "dark");
   }, [theme, setTheme]);
+
+  if (!mounted) {
+    return null;
+  }
 
   return (
     <Tooltip>

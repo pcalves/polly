@@ -58,23 +58,23 @@ export default function RootLayout({
       <body
         className={`${inter.variable} ${geistMono.variable} antialiased relative font-sans`}
       >
-        <ConvexClientProvider>
-          <QueryProvider>
-            <ThemeProvider
-              attribute="class"
-              defaultTheme="system"
-              enableSystem
-              disableTransitionOnChange
-            >
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="light"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <ConvexClientProvider>
+            <QueryProvider>
               <TooltipProvider>
                 <ThinkingProvider>
                   <AppProvider>{children}</AppProvider>
                   <Toaster />
                 </ThinkingProvider>
               </TooltipProvider>
-            </ThemeProvider>
-          </QueryProvider>
-        </ConvexClientProvider>
+            </QueryProvider>
+          </ConvexClientProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

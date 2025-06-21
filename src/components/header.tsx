@@ -1,17 +1,16 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Moon, Sun, Settings, PanelLeft } from "lucide-react";
-import { useTheme } from "next-themes";
+import { Settings, PanelLeft } from "lucide-react";
 import { ParrotLogo } from "@/components/parrot-logo";
 import Link from "next/link";
 import { useUser } from "@/hooks/use-user";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 
 interface HeaderProps {
   isSidebarOpen: boolean;
@@ -24,17 +23,7 @@ export function Header({
   onToggleSidebar,
   isThinking = false,
 }: HeaderProps) {
-  const { theme, setTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
   const { user } = useUser();
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  const toggleTheme = () => {
-    setTheme(theme === "dark" ? "light" : "dark");
-  };
 
   return (
     <header className="border-b border-border bg-background">
@@ -77,40 +66,7 @@ export function Header({
           )}
 
           {/* Theme toggle */}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={toggleTheme}
-                className="h-8 w-8 p-0"
-                title={
-                  mounted
-                    ? theme === "dark"
-                      ? "Switch to light mode"
-                      : "Switch to dark mode"
-                    : undefined
-                }
-              >
-                {!mounted ? (
-                  <Moon className="h-4 w-4" />
-                ) : theme === "dark" ? (
-                  <Sun className="h-4 w-4" />
-                ) : (
-                  <Moon className="h-4 w-4" />
-                )}
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>
-                {mounted
-                  ? theme === "dark"
-                    ? "Switch to light mode"
-                    : "Switch to dark mode"
-                  : "Toggle theme"}
-              </p>
-            </TooltipContent>
-          </Tooltip>
+          <ThemeToggle />
         </div>
       </div>
     </header>
