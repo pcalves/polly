@@ -569,20 +569,38 @@ export const streamResponse = action({
         },
       });
 
-      // Handle streaming
+      // Handle streaming with batching to reduce write conflicts
       let hasStartedStreaming = false;
+      let contentBuffer = "";
+      let lastUpdate = Date.now();
+      const BATCH_SIZE = 50; // Characters to batch before updating
+      const BATCH_TIMEOUT = 100; // Max ms between updates
+
+      const flushContentBuffer = async () => {
+        if (contentBuffer.length > 0) {
+          await ctx.runMutation(internal.messages.internalAppendContent, {
+            id: args.messageId,
+            contentChunk: contentBuffer,
+          });
+          contentBuffer = "";
+          lastUpdate = Date.now();
+        }
+      };
 
       for await (const textPart of result.textStream) {
-        // Check if stopped
-        const message = await ctx.runMutation(
-          internal.messages.internalGetById,
-          {
-            id: args.messageId,
+        // Check if stopped less frequently to reduce read conflicts
+        if (Date.now() - lastUpdate > 500) {
+          // Check every 500ms instead of every chunk
+          const message = await ctx.runMutation(
+            internal.messages.internalGetById,
+            {
+              id: args.messageId,
+            }
+          );
+          if (message?.metadata?.stopped) {
+            abortController?.abort();
+            throw new Error("StoppedByUser");
           }
-        );
-        if (message?.metadata?.stopped) {
-          abortController?.abort();
-          throw new Error("StoppedByUser");
         }
 
         if (!hasStartedStreaming) {
@@ -594,12 +612,21 @@ export const streamResponse = action({
           });
         }
 
-        // Stream content incrementally
-        await ctx.runMutation(internal.messages.internalAppendContent, {
-          id: args.messageId,
-          contentChunk: textPart,
-        });
+        // Add to buffer
+        contentBuffer += textPart;
+
+        // Flush buffer if it's large enough or enough time has passed
+        const timeSinceLastUpdate = Date.now() - lastUpdate;
+        if (
+          contentBuffer.length >= BATCH_SIZE ||
+          timeSinceLastUpdate >= BATCH_TIMEOUT
+        ) {
+          await flushContentBuffer();
+        }
       }
+
+      // Flush any remaining content
+      await flushContentBuffer();
 
       // Handle reasoning stream (if available for Anthropic models with thinking support)
       if (

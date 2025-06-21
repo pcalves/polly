@@ -162,7 +162,32 @@ export const internalUpdate = internalMutation({
   },
   handler: async (ctx, args) => {
     const { id, ...updates } = args;
-    return await ctx.db.patch(id, updates);
+
+    // Use a retry loop with exponential backoff for write conflicts
+    let retries = 0;
+    const maxRetries = 3;
+
+    while (retries < maxRetries) {
+      try {
+        return await ctx.db.patch(id, updates);
+      } catch (error) {
+        // Check if this is a write conflict and we should retry
+        if (
+          retries < maxRetries - 1 &&
+          error instanceof Error &&
+          (error.message.includes("write conflict") ||
+            error.message.includes("conflict"))
+        ) {
+          retries++;
+          // Exponential backoff: 10ms, 20ms, 40ms
+          await new Promise(resolve =>
+            setTimeout(resolve, 10 * Math.pow(2, retries - 1))
+          );
+          continue;
+        }
+        throw error;
+      }
+    }
   },
 });
 
@@ -296,17 +321,41 @@ export const internalAppendContent = internalMutation({
     contentChunk: v.string(),
   },
   handler: async (ctx, args) => {
-    const message = await ctx.db.get(args.id);
-    if (!message) {
-      throw new Error(`Message with id ${args.id} not found`);
+    // Use a retry loop with exponential backoff for write conflicts
+    let retries = 0;
+    const maxRetries = 3;
+
+    while (retries < maxRetries) {
+      try {
+        const message = await ctx.db.get(args.id);
+        if (!message) {
+          throw new Error(`Message with id ${args.id} not found`);
+        }
+
+        const currentContent = message.content || "";
+        const newContent = currentContent + args.contentChunk;
+
+        return await ctx.db.patch(args.id, {
+          content: newContent,
+        });
+      } catch (error) {
+        // Check if this is a write conflict and we should retry
+        if (
+          retries < maxRetries - 1 &&
+          error instanceof Error &&
+          (error.message.includes("write conflict") ||
+            error.message.includes("conflict"))
+        ) {
+          retries++;
+          // Exponential backoff: 10ms, 20ms, 40ms
+          await new Promise(resolve =>
+            setTimeout(resolve, 10 * Math.pow(2, retries - 1))
+          );
+          continue;
+        }
+        throw error;
+      }
     }
-
-    const currentContent = message.content || "";
-    const newContent = currentContent + args.contentChunk;
-
-    return await ctx.db.patch(args.id, {
-      content: newContent,
-    });
   },
 });
 
@@ -317,17 +366,86 @@ export const internalAppendReasoning = internalMutation({
     reasoningChunk: v.string(),
   },
   handler: async (ctx, args) => {
-    const message = await ctx.db.get(args.id);
-    if (!message) {
-      throw new Error(`Message with id ${args.id} not found`);
+    // Use a retry loop with exponential backoff for write conflicts
+    let retries = 0;
+    const maxRetries = 3;
+
+    while (retries < maxRetries) {
+      try {
+        const message = await ctx.db.get(args.id);
+        if (!message) {
+          throw new Error(`Message with id ${args.id} not found`);
+        }
+
+        const currentReasoning = message.reasoning || "";
+        const newReasoning = currentReasoning + args.reasoningChunk;
+
+        return await ctx.db.patch(args.id, {
+          reasoning: newReasoning,
+        });
+      } catch (error) {
+        // Check if this is a write conflict and we should retry
+        if (
+          retries < maxRetries - 1 &&
+          error instanceof Error &&
+          (error.message.includes("write conflict") ||
+            error.message.includes("conflict"))
+        ) {
+          retries++;
+          // Exponential backoff: 10ms, 20ms, 40ms
+          await new Promise(resolve =>
+            setTimeout(resolve, 10 * Math.pow(2, retries - 1))
+          );
+          continue;
+        }
+        throw error;
+      }
     }
+  },
+});
 
-    const currentReasoning = message.reasoning || "";
-    const newReasoning = currentReasoning + args.reasoningChunk;
+// Batched content update to reduce write conflicts during streaming
+export const internalBatchAppendContent = internalMutation({
+  args: {
+    id: v.id("messages"),
+    contentBatch: v.string(),
+  },
+  handler: async (ctx, args) => {
+    // Use a retry loop with exponential backoff for write conflicts
+    let retries = 0;
+    const maxRetries = 3;
 
-    return await ctx.db.patch(args.id, {
-      reasoning: newReasoning,
-    });
+    while (retries < maxRetries) {
+      try {
+        const message = await ctx.db.get(args.id);
+        if (!message) {
+          throw new Error(`Message with id ${args.id} not found`);
+        }
+
+        const currentContent = message.content || "";
+        const newContent = currentContent + args.contentBatch;
+
+        return await ctx.db.patch(args.id, {
+          content: newContent,
+        });
+      } catch (error) {
+        // Check if this is a write conflict and we should retry
+        if (
+          retries < maxRetries - 1 &&
+          error instanceof Error &&
+          (error.message.includes("write conflict") ||
+            error.message.includes("conflict"))
+        ) {
+          retries++;
+          // Exponential backoff: 10ms, 20ms, 40ms
+          await new Promise(resolve =>
+            setTimeout(resolve, 10 * Math.pow(2, retries - 1))
+          );
+          continue;
+        }
+        throw error;
+      }
+    }
   },
 });
 
